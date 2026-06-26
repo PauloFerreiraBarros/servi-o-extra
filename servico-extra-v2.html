@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Serviço Extra — Colégio Miudinho</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{--p:#4f46e5;--pl:#e0e7ff;--g:#16a34a;--r:#dc2626;--w:#d97706;--g50:#f9fafb;--g100:#f3f4f6;--g200:#e5e7eb;--g400:#9ca3af;--g600:#4b5563;--g800:#1f2937;--rad:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--g50);color:var(--g800);min-height:100vh}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--p);display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;z-index:9999;gap:16px}
+#loading h2{font-size:1.1rem}
+.spinner{width:36px;height:36px;border:4px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* AUTH SCREENS */
+.auth-screen{display:none;min-height:100vh;background:var(--p);align-items:center;justify-content:center;padding:24px}
+.auth-card{background:white;border-radius:16px;padding:28px 24px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.auth-logo{text-align:center;margin-bottom:20px}
+.auth-logo h1{font-size:1.3rem;color:var(--p);font-weight:800}
+.auth-logo p{font-size:.8rem;color:var(--g400);margin-top:4px}
+.auth-card h2{font-size:1rem;font-weight:700;margin-bottom:16px;color:var(--g800)}
+.auth-link{text-align:center;margin-top:14px;font-size:.82rem;color:var(--g600)}
+.auth-link a{color:var(--p);font-weight:700;cursor:pointer;text-decoration:none}
+.role-pills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.role-pill{padding:10px 6px;border:2px solid var(--g200);border-radius:8px;text-align:center;cursor:pointer;font-size:.78rem;font-weight:700;color:var(--g600);transition:.2s}
+.role-pill.active{border-color:var(--p);background:var(--pl);color:var(--p)}
+
+/* HEADER */
+header{background:var(--p);color:white;padding:14px 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between}
+.header-left h1{font-size:1rem;font-weight:700}
+.header-left p{font-size:.72rem;opacity:.8;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:10px}
+.user-badge{font-size:.75rem;background:rgba(255,255,255,.2);padding:4px 10px;border-radius:20px}
+.btn-logout{background:rgba(255,255,255,.15);border:none;color:white;padding:6px 12px;border-radius:8px;font-size:.75rem;font-weight:700;cursor:pointer}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#86efac}
+.sync-dot.off{background:#fca5a5}
+
+/* NAV */
+nav{background:white;border-bottom:2px solid var(--g200);overflow-x:auto;display:flex}
+nav button{flex:1;min-width:70px;padding:11px 6px;font-size:.7rem;font-weight:700;color:var(--g600);background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;transition:.2s}
+nav button.active{color:var(--p);border-bottom-color:var(--p)}
+
+/* PAGES */
+.page{display:none;padding:14px;max-width:700px;margin:0 auto}
+.page.active{display:block}
+
+/* CARDS */
+.card{background:white;border-radius:var(--rad);padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.card h2{font-size:.92rem;font-weight:700;margin-bottom:12px}
+
+/* FORM */
+label{display:block;font-size:.78rem;font-weight:700;color:var(--g600);margin-bottom:3px;margin-top:10px}
+input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--g200);border-radius:8px;font-size:.88rem;color:var(--g800);background:white;transition:.2s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--p)}
+input[type=time]{font-size:1rem;font-weight:700;letter-spacing:.05em}
+.row{display:flex;gap:10px}
+.row>*{flex:1}
+.divider{height:1px;background:var(--g100);margin:12px 0}
+
+/* BUTTONS */
+.btn{display:block;width:100%;padding:13px;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;border:none;transition:.2s;margin-top:12px;text-align:center}
+.btn-p{background:var(--p);color:white}.btn-p:active{background:#3730a3}
+.btn-g{background:var(--g);color:white}
+.btn-r{background:var(--r);color:white}
+.btn-o{background:white;color:var(--p);border:2px solid var(--p)}
+.btn-sm{padding:7px 12px;font-size:.76rem;width:auto;display:inline-block;margin-top:0;border-radius:7px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* BADGES */
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:.7rem;font-weight:700}
+.badge-b{background:var(--pl);color:var(--p)}
+.badge-g{background:#dcfce7;color:var(--g)}
+.badge-o{background:#fff7ed;color:var(--w)}
+.badge-r{background:#fee2e2;color:var(--r)}
+
+/* CALC PREVIEW */
+.calc-box{background:var(--pl);border-radius:10px;padding:14px;margin-top:12px;border:1.5px solid var(--p)}
+.calc-box h3{font-size:.82rem;font-weight:700;color:var(--p);margin-bottom:8px}
+.calc-row{display:flex;justify-content:space-between;font-size:.82rem;padding:3px 0;color:var(--g800)}
+.calc-row.total{font-weight:800;font-size:1rem;color:var(--p);border-top:1px solid rgba(79,70,229,.3);margin-top:6px;padding-top:6px}
+.calc-row.deduct{color:var(--r)}
+
+/* REF LIST */
+.ref-turma-header{background:var(--p);color:white;padding:8px 14px;font-size:.82rem;font-weight:700;border-radius:8px;margin:10px 0 6px}
+.ref-aluno-row{display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid var(--g100);gap:10px;background:white}
+.ref-aluno-row:last-child{border-bottom:none}
+.ref-nome{font-size:.85rem;font-weight:600;flex:1}
+.ref-checks{display:flex;gap:6px}
+.ref-check{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.ref-check input{width:20px;height:20px;accent-color:var(--p);cursor:pointer;margin:0}
+.ref-check span{font-size:.62rem;font-weight:700;color:var(--g600)}
+
+/* HISTORICO */
+.reg-item{background:var(--g50);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.reg-head{display:flex;justify-content:space-between;align-items:flex-start}
+.reg-nome{font-weight:700;font-size:.88rem}
+.reg-sub{font-size:.73rem;color:var(--g400);margin-top:2px}
+.reg-tags{margin-top:6px;display:flex;flex-wrap:wrap;gap:5px}
+.reg-horas{font-size:1rem;font-weight:800;color:var(--p)}
+
+/* RELATORIO */
+.rel-aluno{background:white;border-radius:var(--rad);padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.rel-nome{font-weight:700;font-size:.92rem}
+.rel-sub{font-size:.75rem;color:var(--g400)}
+.rel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.rel-cell{background:var(--g50);border-radius:8px;padding:8px 10px;text-align:center}
+.rel-cell-lbl{font-size:.68rem;color:var(--g400);font-weight:700}
+.rel-cell-val{font-size:.95rem;font-weight:800;color:var(--g800)}
+.rel-total{margin-top:10px;padding:10px 12px;background:var(--p);color:white;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
+
+/* USUARIOS */
+.user-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--g100)}
+.user-item:last-child{border-bottom:none}
+
+/* CONFIG */
+.cfg-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--g100);gap:12px}
+.cfg-row:last-child{border-bottom:none}
+.cfg-lbl{font-weight:600;font-size:.87rem}
+.cfg-inp{width:100px;text-align:right;padding:7px 10px}
+
+/* SEARCH */
+.search-wrap{position:relative;margin-bottom:10px}
+.search-wrap input{padding-left:34px}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--g400);pointer-events:none}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--g800);color:white;padding:10px 18px;border-radius:20px;font-size:.83rem;font-weight:700;z-index:9999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px 16px;color:var(--g400)}
+.empty-ico{font-size:2.2rem;margin-bottom:8px}
+.empty p{font-size:.85rem}
+
+/* MONTH ROW */
+.month-row{display:flex;gap:8px;margin-bottom:12px}
+.month-row select{flex:1}
+
+@media print{
+  header,nav,.no-print{display:none!important}
+  .page{display:block!important;padding:0}
+  body{background:white}
+  #loading,#screen-login,#screen-register{display:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading"><div class="spinner"></div><h2>Carregando...</h2></div>
+
+<!-- LOGIN -->
+<div class="auth-screen" id="screen-login">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>📋 Serviço Extra</h1>
+      <p>Colégio Miudinho Segmento</p>
+    </div>
+    <h2>Entrar</h2>
+    <label>E-mail</label>
+    <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
+    <label>Senha</label>
+    <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn btn-p" onclick="fazerLogin()">Entrar</button>
+    <div class="auth-link">Primeiro acesso? <a onclick="showScreen('register')">Criar conta</a></div>
+    <div id="login-erro" style="color:var(--r);font-size:.8rem;margin-top:10px;text-align:center"></div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div class="auth-screen" id="screen-register">
+  <div class="auth-card">
+    <div class="auth-logo"><h1>📋 Criar Conta</h1><p>Colégio Miudinho Segmento</p></div>
+    <h2>Novo usuário</h2>
+    <label>Nome completo</label>
+    <input type="text" id="reg-nome" placeholder="Seu nome">
+    <label>E-mail</label>
+    <input type="email" id="reg-email" placeholder="seu@email.com">
+    <label>Senha (mín. 6 caracteres)</label>
+    <input type="password" id="reg-senha" placeholder="••••••••">
+    <label>Código de convite (fornecido pelo administrador)</label>
+    <input type="text" id="reg-codigo" placeholder="Código de convite">
+    <button class="btn btn-p" onclick="criarConta()">Criar conta</button>
+    <div class="auth-link"><a onclick="showScreen('login')">← Voltar para login</a></div>
+    <div id="reg-erro" style="color:var(--r);font-size:.8rem;margin-top:10px;text-align:center"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <header>
+    <div class="header-left">
+      <h1>📋 Serviço Extra</h1>
+      <p id="h-escola">Colégio Miudinho Segmento</p>
+    </div>
+    <div class="header-right">
+      <div class="sync-dot" id="sync-dot" title="Conectado"></div>
+      <span class="user-badge" id="h-usuario"></span>
+      <button class="btn-logout" onclick="sair()">Sair</button>
+    </div>
+  </header>
+  <nav id="main-nav"></nav>
+
+  <!-- PROFESSOR -->
+  <div class="page" id="page-prof">
+    <div class="card">
+      <h2>📝 Registro do Professor</h2>
+      <div class="row">
+        <div><label>Data</label><input type="date" id="p-data"></div>
+        <div><label>Aluno</label>
+          <select id="p-aluno" onchange="onAlunoChange()"><option value="">Selecione...</option></select>
+        </div>
+      </div>
+      <div id="p-periodo-info" style="display:none;margin-top:10px;padding:10px 12px;background:var(--g50);border-radius:8px;font-size:.83rem;color:var(--g600)"></div>
+      <div class="row">
+        <div>
+          <label id="p-hora-label">Horário registrado</label>
+          <input type="time" id="p-hora-reg" oninput="calcularPreview()">
+        </div>
+        <div>
+          <label>Horário ref. aula <span style="font-size:.7rem;color:var(--g400)">(editável)</span></label>
+          <input type="time" id="p-hora-ref" oninput="calcularPreview()">
+        </div>
+      </div>
+      <label>Aulas extras no dia (h) <span style="font-size:.7rem;color:var(--g400)">— será descontado</span></label>
+      <input type="number" id="p-aulas-extra" min="0" max="8" step="0.5" value="0" placeholder="0" oninput="calcularPreview()">
+      <label>Observação (opcional)</label>
+      <textarea id="p-obs" rows="2" placeholder="Ex: autorização escrita dos pais"></textarea>
+
+      <div id="p-calc-preview" style="display:none"></div>
+
+      <button class="btn btn-p" id="p-btn-salvar" onclick="salvarRegistroProf()">✅ Salvar Registro</button>
+    </div>
+
+    <div class="card">
+      <h2>📋 Registros de hoje</h2>
+      <div id="p-hoje-list"><div class="empty"><div class="empty-ico">📋</div><p>Nenhum registro hoje.</p></div></div>
+    </div>
+  </div>
+
+  <!-- REFEITÓRIO -->
+  <div class="page" id="page-ref">
+    <div class="card">
+      <h2>🍽️ Registro do Refeitório</h2>
+      <label>Data</label>
+      <input type="date" id="r-data" onchange="carregarListaRef()">
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-p btn-sm no-print" onclick="carregarListaRef()">🔄 Atualizar lista</button>
+        <button class="btn btn-o btn-sm no-print" onclick="window.print()">🖨️ Imprimir</button>
+      </div>
+    </div>
+    <div id="ref-lista-container">
+      <div class="empty"><div class="empty-ico">🍽️</div><p>Selecione uma data para ver a lista.</p></div>
+    </div>
+  </div>
+
+  <!-- RELATÓRIO (admin) -->
+  <div class="page" id="page-relatorio">
+    <div class="card">
+      <h2>📊 Relatório Consolidado</h2>
+      <div class="month-row">
+        <select id="rel-mes"></select>
+        <select id="rel-ano"></select>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-p btn-sm no-print" onclick="gerarRelatorio()">Gerar</button>
+        <button class="btn btn-o btn-sm no-print" onclick="window.print()">🖨️ Imprimir</button>
+      </div>
+    </div>
+    <div id="rel-content"></div>
+  </div>
+
+  <!-- ALUNOS (admin) -->
+  <div class="page" id="page-alunos">
+    <div class="card">
+      <h2>👦 Lista de Alunos (777)</h2>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="al-busca" placeholder="Nome, turma ou matrícula..." oninput="renderAlunos()">
+      </div>
+      <div id="al-list"></div>
+    </div>
+    <div class="card">
+      <h2>➕ Adicionar Aluno Avulso</h2>
+      <p style="font-size:.8rem;color:var(--g400);margin-bottom:8px">Para alunos não listados.</p>
+      <div class="row">
+        <div><label>Nome</label><input type="text" id="al-nome" placeholder="Nome completo"></div>
+        <div><label>Turma</label><input type="text" id="al-turma" placeholder="Ex: 3º ANO A"></div>
+      </div>
+      <label>Período</label>
+      <select id="al-periodo"><option value="manha">Manhã</option><option value="tarde">Tarde</option></select>
+      <button class="btn btn-g" onclick="adicionarAlunoExtra()">➕ Adicionar</button>
+      <div id="al-extras-list" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- USUÁRIOS (admin) -->
+  <div class="page" id="page-usuarios">
+    <div class="card">
+      <h2>➕ Criar Novo Usuário</h2>
+      <p style="font-size:.8rem;color:var(--g400);margin-bottom:8px">O usuário receberá um código de convite para criar a própria senha.</p>
+      <div class="row">
+        <div><label>Nome</label><input type="text" id="nu-nome" placeholder="Nome completo"></div>
+        <div><label>E-mail</label><input type="email" id="nu-email" placeholder="email@escola.com"></div>
+      </div>
+      <label>Perfil</label>
+      <select id="nu-role">
+        <option value="professora">👩‍🏫 Professora</option>
+        <option value="refeitorio">🍽️ Refeitório</option>
+        <option value="admin">🔑 Administrador</option>
+      </select>
+      <button class="btn btn-p" onclick="gerarConvite()">🔑 Gerar Código de Convite</button>
+      <div id="nu-resultado" style="margin-top:12px"></div>
+    </div>
+    <div class="card">
+      <h2>👥 Usuários Cadastrados</h2>
+      <div id="usuarios-list"><div class="empty"><div class="empty-ico">👥</div><p>Carregando...</p></div></div>
+    </div>
+  </div>
+
+  <!-- CONFIG (admin) -->
+  <div class="page" id="page-config">
+    <div class="card">
+      <h2>💰 Preços (R$)</h2>
+      <div class="cfg-row"><span class="cfg-lbl">⏰ Hora extra</span><input class="cfg-inp" type="number" id="cfg-hora" step="0.5" min="0"></div>
+      <div class="cfg-row"><span class="cfg-lbl">☕ Lanche manhã</span><input class="cfg-inp" type="number" id="cfg-lm" step="0.5" min="0"></div>
+      <div class="cfg-row"><span class="cfg-lbl">🍽️ Almoço</span><input class="cfg-inp" type="number" id="cfg-alm" step="0.5" min="0"></div>
+      <div class="cfg-row"><span class="cfg-lbl">🍪 Lanche tarde</span><input class="cfg-inp" type="number" id="cfg-lt" step="0.5" min="0"></div>
+      <div class="cfg-row"><span class="cfg-lbl">🌙 Jantar</span><input class="cfg-inp" type="number" id="cfg-jan" step="0.5" min="0"></div>
+      <button class="btn btn-p" onclick="salvarConfig()">💾 Salvar Preços</button>
+    </div>
+    <div class="card">
+      <h2>⏰ Horários de Referência</h2>
+      <p style="font-size:.8rem;color:var(--g400);margin-bottom:12px">Edite se necessário. Usados no cálculo automático das horas extras.</p>
+      <div class="cfg-row"><span class="cfg-lbl">Mini 1 / Mini 2 / Maternal / Infantil 1 / Infantil 2 — saída manhã</span><input class="cfg-inp" type="time" id="h-inf-m"></div>
+      <div class="cfg-row"><span class="cfg-lbl">1º ANO — saída manhã</span><input class="cfg-inp" type="time" id="h-1-m"></div>
+      <div class="cfg-row"><span class="cfg-lbl">2º a 5º ANO — saída manhã</span><input class="cfg-inp" type="time" id="h-2-5-m"></div>
+      <div class="cfg-row"><span class="cfg-lbl">6º a 9º ANO — saída manhã</span><input class="cfg-inp" type="time" id="h-6-9-m"></div>
+      <div class="cfg-row"><span class="cfg-lbl">Todos — entrada tarde</span><input class="cfg-inp" type="time" id="h-tarde"></div>
+      <button class="btn btn-p" onclick="salvarHorarios()">💾 Salvar Horários</button>
+    </div>
+    <div class="card">
+      <h2>🏫 Nome da Escola</h2>
+      <input type="text" id="cfg-escola" placeholder="Nome da escola">
+      <button class="btn btn-o" onclick="salvarEscola()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== FIREBASE =====
+const FB = {
+  apiKey:"AIzaSyD5qEj0AdjDDi0RaJEaQliLekxpabg3a6Y",
+  authDomain:"servico-extra.firebaseapp.com",
+  projectId:"servico-extra",
+  storageBucket:"servico-extra.firebasestorage.app",
+  messagingSenderId:"952176122601",
+  appId:"1:952176122601:web:1296406e135cb18ca7ae78"
+};
+firebase.initializeApp(FB);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ===== ALUNOS BASE =====
+const ALUNOS_BASE = [{"id": "4755", "matricula": "4755", "nome": "ALICE ALVES AMERICO SALVIANO", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4938", "matricula": "4938", "nome": "Alice Campos Pinheiro", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "5007", "matricula": "5007", "nome": "Anthony Miguel Zolezi do Nascimento Siqueira", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4812", "matricula": "4812", "nome": "Benicio Bettini Erthal", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4484", "matricula": "4484", "nome": "Cecilia Isabel Viana de Barros Borim", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4432", "matricula": "4432", "nome": "Clara Rodrigues de Andrade", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4482", "matricula": "4482", "nome": "Enrico Miranda Viegas", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4518", "matricula": "4518", "nome": "FERNANDA TKACZ DE BARROS", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "5037", "matricula": "5037", "nome": "FRANCISCO SANTOS DE CASTRO", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4405", "matricula": "4405", "nome": "Helena Amadeu Romero Ufeni", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4508", "matricula": "4508", "nome": "Júlia Silva Matubara", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4716", "matricula": "4716", "nome": "Laura Vilela Kikumori", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4416", "matricula": "4416", "nome": "Lavínia Franco Rodrigues", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4635", "matricula": "4635", "nome": "Liz de Ros Gouvea", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4634", "matricula": "4634", "nome": "Lorena Matheus Milani", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4519", "matricula": "4519", "nome": "Luiza Tkacz de Barros", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4435", "matricula": "4435", "nome": "Manuela Cabreira Buscariolli Borges", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4870", "matricula": "4870", "nome": "Marina Beskow Zumckeller", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4943", "matricula": "4943", "nome": "Miguel Izidoro Bello Ferrari", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4544", "matricula": "4544", "nome": "Raul de Albuquerque Nogueira", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4574", "matricula": "4574", "nome": "Sameer Biazotto Gurnani", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4621", "matricula": "4621", "nome": "Yuri Sakalauskas Martins Valcã", "turma": "Infantil 1 A", "periodo": "manha"}, {"id": "4731", "matricula": "4731", "nome": "Alice Vieira Dantas", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4623", "matricula": "4623", "nome": "Arthur Hiro Hasegava de Oliveira", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4573", "matricula": "4573", "nome": "Bella do Nascimento Pelegrino", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4576", "matricula": "4576", "nome": "BERNARDO FONSECA BULGARELLI", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4562", "matricula": "4562", "nome": "Daniel Baptista do Espírito Santo", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4533", "matricula": "4533", "nome": "Eva Manesco Cardoso Saab", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4713", "matricula": "4713", "nome": "Gabriel Galindo Pinheiro dos Santos", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4811", "matricula": "4811", "nome": "João Bione Mafort", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4836", "matricula": "4836", "nome": "João Pedro Jager Reis", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4788", "matricula": "4788", "nome": "Júlia da Cruz Barcos Souza", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4721", "matricula": "4721", "nome": "Kadu da Costa Marques", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4730", "matricula": "4730", "nome": "Laura Vieira Dantas", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4485", "matricula": "4485", "nome": "Leonardo Marano Romani Tomé", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4699", "matricula": "4699", "nome": "Lorenzo Reis Muruci", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4616", "matricula": "4616", "nome": "LUCAS MIGUEL DE OLIVEIRA GIACOMO", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4420", "matricula": "4420", "nome": "Luisa Opitz Grechi", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4459", "matricula": "4459", "nome": "Luisa Tateyama Salomão", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4490", "matricula": "4490", "nome": "Mahdi Hussein Hojeij", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4796", "matricula": "4796", "nome": "Marcelo Garone Neto", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4764", "matricula": "4764", "nome": "Maria Vitória Nunes Loureiro Propheta", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4503", "matricula": "4503", "nome": "Rafaela Baronian Hansted", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4529", "matricula": "4529", "nome": "Stella Leão Escórcio de Oliveira", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4527", "matricula": "4527", "nome": "TULIN ABOU LTAIF", "turma": "Infantil 1 D", "periodo": "tarde"}, {"id": "4591", "matricula": "4591", "nome": "Alice Procopio Gomes da Silva Costa", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4586", "matricula": "4586", "nome": "Arthur Inácio Majzoub", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "5026", "matricula": "5026", "nome": "Bruno Luiz Maciel Lins Filho", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4427", "matricula": "4427", "nome": "Clara Cruz Bussine", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4491", "matricula": "4491", "nome": "Gael Medeiros Vernaglia Gouveia Sales", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4777", "matricula": "4777", "nome": "Giovanni de Paiva Ambrico", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4565", "matricula": "4565", "nome": "HANNA COTRIM", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4615", "matricula": "4615", "nome": "Hannah Omar Saleh", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "5014", "matricula": "5014", "nome": "Helena Valentina de Jesus Oliveira", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4712", "matricula": "4712", "nome": "João Pedro Rodrigues Tiburtino Parreira", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4838", "matricula": "4838", "nome": "Larissa Lusitano Quines", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4454", "matricula": "4454", "nome": "Leonardo Chadi Visone", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4604", "matricula": "4604", "nome": "Lívia Albuquerque Faiçal Corvo", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4366", "matricula": "4366", "nome": "Liz de Souza Valente", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4479", "matricula": "4479", "nome": "Lorena Cavalheri Moraes Barros", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4486", "matricula": "4486", "nome": "Louise Mastroeni Munhoz", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4509", "matricula": "4509", "nome": "Luan Aguiar Pires", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4940", "matricula": "4940", "nome": "Luca Pegetti Maran", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4558", "matricula": "4558", "nome": "Manuela Diogo Campião", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4821", "matricula": "4821", "nome": "Marina Morisson Carreira", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4711", "matricula": "4711", "nome": "Paola Cerri Vaqueiro", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4394", "matricula": "4394", "nome": "Ravi Beck Bandolim", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4907", "matricula": "4907", "nome": "RAVI BIASSI DE PINHO RUIZ", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "5034", "matricula": "5034", "nome": "Victoria Marques Fernandes", "turma": "Infantil 1 E", "periodo": "tarde"}, {"id": "4666", "matricula": "4666", "nome": "Alice Tavares Medeiros", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4265", "matricula": "4265", "nome": "Ana Luiza Leite Almeida", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4505", "matricula": "4505", "nome": "Breno Meireles de Camargo", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4452", "matricula": "4452", "nome": "Felipe Abud Scagliusi Marson Seabra Elias", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4733", "matricula": "4733", "nome": "Gabriel Martins Xavier", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4379", "matricula": "4379", "nome": "Haik Tobaruela Haladjian", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4511", "matricula": "4511", "nome": "Helena Melo Teixeira", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4744", "matricula": "4744", "nome": "Hugo Hideo Pereira Sakaguchi", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4510", "matricula": "4510", "nome": "Isabella Ferreira Aguiar da Silva", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4543", "matricula": "4543", "nome": "João Pedro Santos Aguiar", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4445", "matricula": "4445", "nome": "Joaquim Carvalho de Holanda", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4672", "matricula": "4672", "nome": "Lucas Ceccarelli Siebert", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4311", "matricula": "4311", "nome": "Maitê Rocha Alarcon Piccirilli Souza", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4526", "matricula": "4526", "nome": "Manuella Ferreira Alcazar", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4330", "matricula": "4330", "nome": "Pedro Artacio Teló", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4585", "matricula": "4585", "nome": "Stella Morgantetti Bem", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "5033", "matricula": "5033", "nome": "THEO ZAMPIERI DE LIMA CASTILHO", "turma": "Infantil 2 A", "periodo": "manha"}, {"id": "4363", "matricula": "4363", "nome": "Alice Zemlickas Lamping", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4350", "matricula": "4350", "nome": "Ana Laura Sales de Oliveira", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4965", "matricula": "4965", "nome": "AYUMI HASUO DE OLIVEIRA", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4539", "matricula": "4539", "nome": "Catarina Ibrahim Elhajj", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "5009", "matricula": "5009", "nome": "Davi Andrade Gouveia da Silva", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4372", "matricula": "4372", "nome": "Felipe dos Santos Assunção", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4404", "matricula": "4404", "nome": "Isabela Cardoso Wada", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4422", "matricula": "4422", "nome": "Leonardo da Cunha Pereira", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4751", "matricula": "4751", "nome": "Maitê Abreu da Palma", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4447", "matricula": "4447", "nome": "Manuela Ferreira Alves", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4304", "matricula": "4304", "nome": "Maria Eduarda do Couto Prado Pacheco", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4646", "matricula": "4646", "nome": "Maria Helena Sousa Gebrin", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4962", "matricula": "4962", "nome": "Marina Lusitano Rachas Ribeiro", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4352", "matricula": "4352", "nome": "Pietro Dovichi Mendes Zecca", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4377", "matricula": "4377", "nome": "Rafael Navascues Bernardino Magalhães", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4398", "matricula": "4398", "nome": "Sophia Maprelian Bernardi", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4913", "matricula": "4913", "nome": "Valentina da Silva Baptista", "turma": "Infantil 2 B", "periodo": "manha"}, {"id": "4732", "matricula": "4732", "nome": "Alice Martin Miranda Nunes", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4858", "matricula": "4858", "nome": "Antonella Orsi Bergamo", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4799", "matricula": "4799", "nome": "Antonio Jose Claudio Neto", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4406", "matricula": "4406", "nome": "Bento Taranto Zamith", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4446", "matricula": "4446", "nome": "Bernardo de Santis Lopes", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4985", "matricula": "4985", "nome": "Davi Fritsch Hidalgo", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4607", "matricula": "4607", "nome": "Elisa Yukari Ito", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4462", "matricula": "4462", "nome": "Gael Alciso Rolim Jordão", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4396", "matricula": "4396", "nome": "Gael Sarde Perez do Carmo", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4409", "matricula": "4409", "nome": "Guilherme Araujo Mendonça", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4342", "matricula": "4342", "nome": "Isaac Juca Lopes Rebolo", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4360", "matricula": "4360", "nome": "Joaquim Lemos Aransai Piccolo Esquiavan", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4413", "matricula": "4413", "nome": "Kaléo Uchoa Marcelino Costa", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4287", "matricula": "4287", "nome": "Lucas Casanova Duarte", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4550", "matricula": "4550", "nome": "Maitê Simões Pereira", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4478", "matricula": "4478", "nome": "Manuella Rodrigues Aguiar da Silva", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4483", "matricula": "4483", "nome": "Marcela Cabral Faustino", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4619", "matricula": "4619", "nome": "Maya Procópio da Silva", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4530", "matricula": "4530", "nome": "Miguel Bernardino de Araujo Domingues", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4792", "matricula": "4792", "nome": "Noah Diniz Ricardi Moro", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4450", "matricula": "4450", "nome": "Noah Pontes Ferreira", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4620", "matricula": "4620", "nome": "Rafael Galego Procópio", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4548", "matricula": "4548", "nome": "Rafaela Crema Gianfelice", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4528", "matricula": "4528", "nome": "Rafaela Ribeiro da Fonseca", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4540", "matricula": "4540", "nome": "Ravi Oliveira Augusto", "turma": "Infantil 2 D", "periodo": "tarde"}, {"id": "4846", "matricula": "4846", "nome": "Alceu Kreniski Neto", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4690", "matricula": "4690", "nome": "Arthur Fertonani Perrechil", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4837", "matricula": "4837", "nome": "Benjamin Henriques Silva", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4853", "matricula": "4853", "nome": "Cecília Oliveira Pelegrin", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4896", "matricula": "4896", "nome": "Clara Nigro Matias", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4464", "matricula": "4464", "nome": "Daniel Abou Kohl", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4393", "matricula": "4393", "nome": "Gael Kiyoshi Lima Kanda", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "5010", "matricula": "5010", "nome": "Helena Nunes Neri de Morais", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4618", "matricula": "4618", "nome": "Isabela Nicolau Kirikian", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4343", "matricula": "4343", "nome": "Isabella Barison Herbst", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4264", "matricula": "4264", "nome": "Jade Rodrigues Molinaro", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4197", "matricula": "4197", "nome": "Leonardo Angelo Jesus Savatin", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4456", "matricula": "4456", "nome": "Lorenzo Buarque Cabral", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4728", "matricula": "4728", "nome": "Lucas de Leão Andrade", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4851", "matricula": "4851", "nome": "Maisa Ribeiro Caires", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4893", "matricula": "4893", "nome": "Maria Eduarda Aquino Pongelupi", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4926", "matricula": "4926", "nome": "Mariana Angeli Brito", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4861", "matricula": "4861", "nome": "Martin Gagliardi de Sousa Silva", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4880", "matricula": "4880", "nome": "OSCAR LIN", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4387", "matricula": "4387", "nome": "Rael Casotti Salazar", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4886", "matricula": "4886", "nome": "Ravenna Bonafé de lira", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4725", "matricula": "4725", "nome": "Theo Gamberini Mourao", "turma": "Infantil 2 E", "periodo": "tarde"}, {"id": "4948", "matricula": "4948", "nome": "Alice Vasconcelos Silverio", "turma": "Maternal A", "periodo": "manha"}, {"id": "4898", "matricula": "4898", "nome": "Arthur Alberani Lopes de Paula", "turma": "Maternal A", "periodo": "manha"}, {"id": "4813", "matricula": "4813", "nome": "Bruno Mateus Portilho das Neves", "turma": "Maternal A", "periodo": "manha"}, {"id": "4743", "matricula": "4743", "nome": "Helena Faustino Soares", "turma": "Maternal A", "periodo": "manha"}, {"id": "4729", "matricula": "4729", "nome": "Izabella Figueira Oliveira", "turma": "Maternal A", "periodo": "manha"}, {"id": "4538", "matricula": "4538", "nome": "Lareine elhajj", "turma": "Maternal A", "periodo": "manha"}, {"id": "4963", "matricula": "4963", "nome": "Lorena Lusitano Rachas Ribeiro", "turma": "Maternal A", "periodo": "manha"}, {"id": "4951", "matricula": "4951", "nome": "Maitê Louise Braga Costruba Cardillo Fernandes", "turma": "Maternal A", "periodo": "manha"}, {"id": "4661", "matricula": "4661", "nome": "Martina de Souza Zago Frade", "turma": "Maternal A", "periodo": "manha"}, {"id": "5022", "matricula": "5022", "nome": "Mateus Niubó Pagliarini Xavier", "turma": "Maternal A", "periodo": "manha"}, {"id": "4651", "matricula": "4651", "nome": "Pedro Henrique Babilon Torrano", "turma": "Maternal A", "periodo": "manha"}, {"id": "4742", "matricula": "4742", "nome": "Rafaela Faustino Soares", "turma": "Maternal A", "periodo": "manha"}, {"id": "4692", "matricula": "4692", "nome": "Ravi Portal Artioli", "turma": "Maternal A", "periodo": "manha"}, {"id": "4660", "matricula": "4660", "nome": "Caetano Geampaulo Zanin", "turma": "Maternal B", "periodo": "manha"}, {"id": "4967", "matricula": "4967", "nome": "EDUARDO SONSIM VICTORIANO", "turma": "Maternal B", "periodo": "manha"}, {"id": "4649", "matricula": "4649", "nome": "Isabela Bologna Gualano", "turma": "Maternal B", "periodo": "manha"}, {"id": "4650", "matricula": "4650", "nome": "Jade Maria Carvalho Serra Mendes", "turma": "Maternal B", "periodo": "manha"}, {"id": "4670", "matricula": "4670", "nome": "Joaquim do Couto Prado Pacheco", "turma": "Maternal B", "periodo": "manha"}, {"id": "4600", "matricula": "4600", "nome": "Julia Farias Yocota", "turma": "Maternal B", "periodo": "manha"}, {"id": "4557", "matricula": "4557", "nome": "Laura Capelletti Carvalho", "turma": "Maternal B", "periodo": "manha"}, {"id": "4991", "matricula": "4991", "nome": "Leonardo Paccioni dos Santos", "turma": "Maternal B", "periodo": "manha"}, {"id": "4700", "matricula": "4700", "nome": "Lucca Mastrorosa Sanches Silva", "turma": "Maternal B", "periodo": "manha"}, {"id": "4568", "matricula": "4568", "nome": "Marina Lima Silva", "turma": "Maternal B", "periodo": "manha"}, {"id": "4555", "matricula": "4555", "nome": "Nicole Dovichi Mendes Zecca", "turma": "Maternal B", "periodo": "manha"}, {"id": "4579", "matricula": "4579", "nome": "Ravi Roberti Moraes", "turma": "Maternal B", "periodo": "manha"}, {"id": "4601", "matricula": "4601", "nome": "Sofia Farias Yocota", "turma": "Maternal B", "periodo": "manha"}, {"id": "5027", "matricula": "5027", "nome": "Stella Nampo", "turma": "Maternal B", "periodo": "manha"}, {"id": "4787", "matricula": "4787", "nome": "Bento Oliveira Silva", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4806", "matricula": "4806", "nome": "HELENA MARANINI DOS SANTOS", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4933", "matricula": "4933", "nome": "Isabela Barros Rodrigues", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4745", "matricula": "4745", "nome": "Laura Genare Castro", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4684", "matricula": "4684", "nome": "Layan Said Bazzi", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4746", "matricula": "4746", "nome": "Lívia Genare Castro", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4676", "matricula": "4676", "nome": "Lorena França Pecini", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4559", "matricula": "4559", "nome": "Luiza Pólido Faria", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4805", "matricula": "4805", "nome": "Maria Luisa Reis de Sa Corrêa", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4679", "matricula": "4679", "nome": "Maria Rodrigues Aguiar da Silva", "turma": "Maternal D", "periodo": "tarde"}, {"id": "  4685", "matricula": "  4685", "nome": "Natália De Lourdes Fernandes Kozak Savio", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4930", "matricula": "4930", "nome": "Pietro Ramanauskas Frangella", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4665", "matricula": "4665", "nome": "Theo Carpinelli Feitosa", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4664", "matricula": "4664", "nome": "Tomas Abreu Spagnol", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4674", "matricula": "4674", "nome": "Vicente Chiurco Giraldez", "turma": "Maternal D", "periodo": "tarde"}, {"id": "4825", "matricula": "4825", "nome": "Adam Zaher El Sakaan", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4786", "matricula": "4786", "nome": "Alice Orsoni Valois", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4814", "matricula": "4814", "nome": "ARTHUR BENÍCIO RAMOS LOPES", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4704", "matricula": "4704", "nome": "Arthur Silva Arruda", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4759", "matricula": "4759", "nome": "Bento Pelusi Chaves", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4767", "matricula": "4767", "nome": "Catarina El Dib Delvecchio", "turma": "Maternal E", "periodo": "tarde"}, {"id": "  4677", "matricula": "  4677", "nome": "Catarina Sartori Figueiredo Freitas", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4706", "matricula": "4706", "nome": "CLARA VANTIN LUCENA", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4697", "matricula": "4697", "nome": "Helena Delgado Ferreira", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4602", "matricula": "4602", "nome": "Lorenzo Oliveira Batista", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4824", "matricula": "4824", "nome": "Marina Machado Trucolo Trindade", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4705", "matricula": "4705", "nome": "Matheus Toriello Sadala Alipio", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4881", "matricula": "4881", "nome": "Miguel Almada Camizato", "turma": "Maternal E", "periodo": "tarde"}, {"id": "  4683", "matricula": "  4683", "nome": "Miguel Garrote Barone", "turma": "Maternal E", "periodo": "tarde"}, {"id": "4520", "matricula": "4520", "nome": "Alice Espigato Albim", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4515", "matricula": "4515", "nome": "Ana Luíza Medeiros Pires", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4970", "matricula": "4970", "nome": "Bento Roxo Nogueira Olivares", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4531", "matricula": "4531", "nome": "Bento Soares Prado Melo Rego", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4756", "matricula": "4756", "nome": "Bernardo Crisante Tomazelli", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4952", "matricula": "4952", "nome": "Francisco Tavares Chagas", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4588", "matricula": "4588", "nome": "Gael Pettinato Nogueira Soares", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4807", "matricula": "4807", "nome": "Henrique Carrazza Gomes Pinto", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4525", "matricula": "4525", "nome": "Jade Mourad Chamma Roldão", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4859", "matricula": "4859", "nome": "Leticía Orsi Bergamo", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4718", "matricula": "4718", "nome": "Lucca Souza Silva", "turma": "Maternal F", "periodo": "tarde"}, {"id": "5028", "matricula": "5028", "nome": "MARIA ISADORA FIRMINO VASCONCELOS", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4643", "matricula": "4643", "nome": "Martina Nedeff de Freitas Oliveira", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4655", "matricula": "4655", "nome": "Miguel Bezerra Rodrigues", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4532", "matricula": "4532", "nome": "Mila Abdallah", "turma": "Maternal F", "periodo": "tarde"}, {"id": "4976", "matricula": "4976", "nome": "RICARDO SAPIENZA FORTES", "turma": "Maternal F", "periodo": "tarde"}, {"id": "5046", "matricula": "5046", "nome": "Maria Júlia Fernandes Modesto", "turma": "Maternal Matrícula - Manhã", "periodo": "manha"}, {"id": "4975", "matricula": "4975", "nome": "Arthur Felipe Petica Tyles", "turma": "Mini 1 A", "periodo": "manha"}, {"id": "4989", "matricula": "4989", "nome": "BERNARDO NASSER CAMPOS", "turma": "Mini 1 A", "periodo": "manha"}, {"id": "5025", "matricula": "5025", "nome": "JOAQUIM BRANDAO VICENTINI", "turma": "Mini 1 A", "periodo": "manha"}, {"id": "4981", "matricula": "4981", "nome": "JOAQUIM PUPE DA SILVA ESCORCIO", "turma": "Mini 1 A", "periodo": "manha"}, {"id": "5040", "matricula": "5040", "nome": "Lavínia Soliano Sartori", "turma": "Mini 1 A", "periodo": "manha"}, {"id": "5021", "matricula": "5021", "nome": "Pedro Amaral Minami", "turma": "Mini 1 A", "periodo": "manha"}, {"id": "5023", "matricula": "5023", "nome": "Pedro Seme Amed Levino Pereira", "turma": "Mini 1 A", "periodo": "manha"}, {"id": "4966", "matricula": "4966", "nome": "Antonella Baronian Hansted", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "5013", "matricula": "5013", "nome": "ANTONELLA DE LACERDA PALLAS", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "4793", "matricula": "4793", "nome": "Bento Maciel Ceravolo de Oliveira", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "5039", "matricula": "5039", "nome": "Daniel Silva Baldasserini", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "4854", "matricula": "4854", "nome": "Eduardo Medeiros Rodrigues", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "4855", "matricula": "4855", "nome": "Heitor César Baia", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "4860", "matricula": "4860", "nome": "Isadora Orsi Bergamo", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "4809", "matricula": "4809", "nome": "JOAQUIM CABRAL QUEIJO", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "5029", "matricula": "5029", "nome": "Lucas Neves Benutto Ferreira", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "4974", "matricula": "4974", "nome": "Manuela Bianco Borges Cepeda", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "4914", "matricula": "4914", "nome": "MIGUEL BARBOSA FERLIN", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "5017", "matricula": "5017", "nome": "NOAH ISAAC BARROS GODOY", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "4988", "matricula": "4988", "nome": "OLÍVIA CAPUCHO CAMILLO SASAKI", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "5001", "matricula": "5001", "nome": "Ravi Martin Miranda Nunes", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "4986", "matricula": "4986", "nome": "Theo Bagatelli Souza", "turma": "Mini 1 D", "periodo": "tarde"}, {"id": "5042", "matricula": "5042", "nome": "CALIL HENRIQUE BARCHETTA NAVAJAS", "turma": "Mini 1 E", "periodo": "tarde"}, {"id": "5041", "matricula": "5041", "nome": "LUIZ CARLOS BARCHETTA NAVAJAS", "turma": "Mini 1 E", "periodo": "tarde"}, {"id": "5049", "matricula": "5049", "nome": "LAIS FERREIRA AGUIAR DA SILVA", "turma": "Mini 1 Matrícula - Manhã", "periodo": "manha"}, {"id": "5048", "matricula": "5048", "nome": "MATHEUS FERREIRA AGUIAR DA SILVA", "turma": "Mini 1 Matrícula - Manhã", "periodo": "manha"}, {"id": "5044", "matricula": "5044", "nome": "Samuel Nep Osmak Gandolpho", "turma": "Mini 1 Matrícula - Manhã", "periodo": "manha"}, {"id": "5052", "matricula": "5052", "nome": "JULIA CARRAZZA GOMES PINTO", "turma": "Mini 1 Matrícula - Tarde", "periodo": "tarde"}, {"id": "5047", "matricula": "5047", "nome": "Ravi Russo Zarza", "turma": "Mini 1 Matrícula - Tarde", "periodo": "tarde"}, {"id": "4954", "matricula": "4954", "nome": "Alan Alves Americo Salviano", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4693", "matricula": "4693", "nome": "Ana Luiza de Oliveira Hespanhol", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4957", "matricula": "4957", "nome": "Betina Alves Damasceno", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4726", "matricula": "4726", "nome": "Davi Bento Moura Michelini", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4884", "matricula": "4884", "nome": "Eloá Cassador de oliveira", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4942", "matricula": "4942", "nome": "Hannah Ghazzaoui", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4972", "matricula": "4972", "nome": "LUCCA CASTILHO ABEL", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4817", "matricula": "4817", "nome": "Luísa Mariotto Simões", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4961", "matricula": "4961", "nome": "Maria Liz Vieira Custodio", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4928", "matricula": "4928", "nome": "Miguel Arruda Queiroz", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4864", "matricula": "4864", "nome": "Pietra Rosangela Gomes da Silva", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4980", "matricula": "4980", "nome": "Serena Laudino Guimarães", "turma": "Mini 2 A", "periodo": "manha"}, {"id": "4844", "matricula": "4844", "nome": "Aurora Fernandes Marchiori", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "4775", "matricula": "4775", "nome": "Benício Etter Caputo dos Santos", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "5024", "matricula": "5024", "nome": "Elis Nascimento Verona", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "4929", "matricula": "4929", "nome": "Heloisa Lopes Noquelli", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "4935", "matricula": "4935", "nome": "Jade Gavioli Assis Santos", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "4932", "matricula": "4932", "nome": "Maitê Camelo Akama", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "4784", "matricula": "4784", "nome": "Mariana Canola Araújo Itokazu", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "4936", "matricula": "4936", "nome": "Mateus Gavioli Assis Santos", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "4992", "matricula": "4992", "nome": "Miguel Paccioni dos Santos", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "4701", "matricula": "4701", "nome": "Pedro Passarini Gatto", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "4797", "matricula": "4797", "nome": "Rafaella Tkacz de Barros", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "4826", "matricula": "4826", "nome": "Ravi Rocha Alves", "turma": "Mini 2 B", "periodo": "manha"}, {"id": "5035", "matricula": "5035", "nome": "Ahmad Omar Mourad", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "5006", "matricula": "5006", "nome": "Bento Ribeiro da Fonseca", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4937", "matricula": "4937", "nome": "Davi de Oliveira Molinaro", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4766", "matricula": "4766", "nome": "Giulia Zampieri Focaccia", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4879", "matricula": "4879", "nome": "Hadi Awala", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4816", "matricula": "4816", "nome": "Henrique Coelho Pescuma", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4714", "matricula": "4714", "nome": "Isabela Cepeda Scagliusi Elias", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4687", "matricula": "4687", "nome": "Lara Alcântara Rangel Gandolpho", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4969", "matricula": "4969", "nome": "Lucca Kuriki Borges", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4802", "matricula": "4802", "nome": "Luiza Santana Pires Augusto", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4903", "matricula": "4903", "nome": "Matteo Marques dos Reis Cunha", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4790", "matricula": "4790", "nome": "Miguel Michelin Valente", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "5038", "matricula": "5038", "nome": "Murillo Garone Pandolfelli", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4757", "matricula": "4757", "nome": "Murilo Martinez Azeredo Daga", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4798", "matricula": "4798", "nome": "Tala Abdallah", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4997", "matricula": "4997", "nome": "Tali Merhi", "turma": "Mini 2 D", "periodo": "tarde"}, {"id": "4901", "matricula": "4901", "nome": "Amélia Rama Damadi", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "5011", "matricula": "5011", "nome": "ANTONELLA CASTRO SCODELARIO", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4803", "matricula": "4803", "nome": "Antonella Fontes Lima", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4815", "matricula": "4815", "nome": "Augusto Maia Sampaio", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4848", "matricula": "4848", "nome": "Enrico Jardim Bertolani", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4662", "matricula": "4662", "nome": "Giovanni Opitz Grechi", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4785", "matricula": "4785", "nome": "Joaquim Oliveira Martins", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "  4680", "matricula": "  4680", "nome": "Joaquim Ramalho Machado", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4941", "matricula": "4941", "nome": "Joaquim Roncatto Prozzi", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4905", "matricula": "4905", "nome": "LIZ SZOLLOSI GRECCO", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4780", "matricula": "4780", "nome": "Marcelo Carvalho Rodrigues", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4707", "matricula": "4707", "nome": "Maria Liz Rocha Almeida", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4735", "matricula": "4735", "nome": "Romeo Jucá Lopes Roncatto", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4794", "matricula": "4794", "nome": "Valentina Aboultaif", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4845", "matricula": "4845", "nome": "Victoria Bassel Abou Litaif", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "4800", "matricula": "4800", "nome": "ZAYD AHMAD MAJDOUB", "turma": "Mini 2 E", "periodo": "tarde"}, {"id": "5051", "matricula": "5051", "nome": "ALYA BURBA LO GIUDICE", "turma": "Mini 2 Matrícula - Tarde", "periodo": "tarde"}, {"id": "5043", "matricula": "5043", "nome": "Daniela Bejarano Rodrigues", "turma": "Mini 2 Matrícula - Tarde", "periodo": "tarde"}, {"id": "5050", "matricula": "5050", "nome": "Samuel Ramos Pereira Vieira", "turma": "Mini 2 Matrícula - Tarde", "periodo": "tarde"}, {"id": "4300", "matricula": "4300", "nome": "Amanda Barba de Andrade", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4257", "matricula": "4257", "nome": "Bella Lima Arakaki", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4395", "matricula": "4395", "nome": "Gustavo de Oliveira Hespanhol", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4101", "matricula": "4101", "nome": "Helena Silva Carvalho", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4455", "matricula": "4455", "nome": "João Francisco Nunes Nena", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4195", "matricula": "4195", "nome": "Leonardo Seme Amed Levino Pereira", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4481", "matricula": "4481", "nome": "Lorenzo Miranda Viegas", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4293", "matricula": "4293", "nome": "Mariah Buono Meneses", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4154", "matricula": "4154", "nome": "Matheus Luis de Oliveira Kalil", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4578", "matricula": "4578", "nome": "Miguel Helvadjian Langella Comenalle", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4437", "matricula": "4437", "nome": "Noah de Sousa Strieder", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4384", "matricula": "4384", "nome": "Valentim Baldresca Verdile", "turma": "1º ANO A", "periodo": "manha"}, {"id": "4955", "matricula": "4955", "nome": "Alberto Chekin Portella", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4584", "matricula": "4584", "nome": "Antonella Bellini de Vasconcelos Stetter", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4781", "matricula": "4781", "nome": "Bella Stochi Pereira Rodrigues", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4971", "matricula": "4971", "nome": "Gabriela Lessa Schmidt de Lima Mota", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4157", "matricula": "4157", "nome": "Guillermo Paredes Carballeira Gonçalves", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4382", "matricula": "4382", "nome": "Heloisa Mangeti Metzner de Souza", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4843", "matricula": "4843", "nome": "Henrique de Almeida Takimoto", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4477", "matricula": "4477", "nome": "Leonardo Aranha", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4606", "matricula": "4606", "nome": "Leonardo Prado Giuliano", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4291", "matricula": "4291", "nome": "Lucca Canola Araujo Itokazu", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4096", "matricula": "4096", "nome": "Martin Hisashi de Freitas Teramoto", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4324", "matricula": "4324", "nome": "Noah Fantibon Ghizelli", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4308", "matricula": "4308", "nome": "Pedro Diniz Oliveira Yunes Cestari", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4362", "matricula": "4362", "nome": "Sthefany Rodrigues Stella", "turma": "1º ANO B", "periodo": "manha"}, {"id": "4915", "matricula": "4915", "nome": "Alice Vieira Rodrigues", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4984", "matricula": "4984", "nome": "AMY ZHOU", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4149", "matricula": "4149", "nome": "Antonella Sanches Lins", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4833", "matricula": "4833", "nome": "Catarina Bittencourt Mondevaim", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4944", "matricula": "4944", "nome": "Davi Cupolillo de Souza", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4828", "matricula": "4828", "nome": "Isabella Rossarolla Onofre", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4888", "matricula": "4888", "nome": "Isadora Pereira Sampaio", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4908", "matricula": "4908", "nome": "Kadu de Amorim Bausas", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4831", "matricula": "4831", "nome": "Laura Silva Sampaio", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4307", "matricula": "4307", "nome": "Marcel Abou Kohl", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4998", "matricula": "4998", "nome": "Matteo Tarì Betetto", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4912", "matricula": "4912", "nome": "Maya Soria Pelense", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4894", "matricula": "4894", "nome": "Rebeca Henriques Moreira", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4598", "matricula": "4598", "nome": "Rodrigo Betencourt Gonçalves", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4627", "matricula": "4627", "nome": "Theo Santos de Camargo Lazare", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4945", "matricula": "4945", "nome": "Valentim Guimarães Godoi", "turma": "1º ANO D", "periodo": "tarde"}, {"id": "4695", "matricula": "4695", "nome": "Aline Zeidani", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4419", "matricula": "4419", "nome": "Antonella Rodrigues Brandl", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "5002", "matricula": "5002", "nome": "Aram Abou Khir", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4439", "matricula": "4439", "nome": "Davi Bevilacqua Borges Chagas", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4284", "matricula": "4284", "nome": "Eloisa El Dib Delvecchio", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4140", "matricula": "4140", "nome": "Enrico Freire Weissberg Codo", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4400", "matricula": "4400", "nome": "Helena Pires de Queiroz Melo", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4321", "matricula": "4321", "nome": "Heloisa Silva Nunes Souza", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4349", "matricula": "4349", "nome": "Joud Karim", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4493", "matricula": "4493", "nome": "Julia Lourenço Menocci Fernandes", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4390", "matricula": "4390", "nome": "Lucas Reis de Sá Correa", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4290", "matricula": "4290", "nome": "Manuela Ponte Lico de Oliveira", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4428", "matricula": "4428", "nome": "Maria Luiza da Silva Nascimento", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4331", "matricula": "4331", "nome": "Marina Norinho Javera", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4207", "matricula": "4207", "nome": "Nicolas Rodrigues de Souza Queiroz", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4215", "matricula": "4215", "nome": "Theo Casqueiro Mendes de Araujo", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4469", "matricula": "4469", "nome": "Theo Szollosi Grecco", "turma": "1º ANO E", "periodo": "tarde"}, {"id": "4871", "matricula": "4871", "nome": "Arthur Dantas Sobreira", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4294", "matricula": "4294", "nome": "Aurora Souza Rangel", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4737", "matricula": "4737", "nome": "CATHARINA KARIS NERI DE AGUIAR", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4612", "matricula": "4612", "nome": "Gabriel Fernandes Posso", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4865", "matricula": "4865", "nome": "GAEL VASCONCELOS ROSA", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4247", "matricula": "4247", "nome": "Guilherme Ortega Pisciottano", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4702", "matricula": "4702", "nome": "GUILHERME YUJIN MORI CHO", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4314", "matricula": "4314", "nome": "Heloisa Cutti Iagalo", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4873", "matricula": "4873", "nome": "Heloísa de Almeida Justino", "turma": "2º ANO A", "periodo": "manha"}, {"id": "3948", "matricula": "3948", "nome": "Isaac Alves Damasceno", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4842", "matricula": "4842", "nome": "Julia Fernandes Viana", "turma": "2º ANO A", "periodo": "manha"}, {"id": "5032", "matricula": "5032", "nome": "LIZ ZAMPIERI DE LIMA CASTILHO", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4640", "matricula": "4640", "nome": "Luan Araújo de Carvalho Dias", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4338", "matricula": "4338", "nome": "Manuela Zago Frade", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4863", "matricula": "4863", "nome": "Manuella Silva Souza Vighy Gomes", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4949", "matricula": "4949", "nome": "Maria Eduarda Sernaglia Bueno", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4822", "matricula": "4822", "nome": "Maria Elham Hachem", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4947", "matricula": "4947", "nome": "MATTEO CANEVAZZI", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4866", "matricula": "4866", "nome": "Maya Froeder Teles", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4269", "matricula": "4269", "nome": "Miguel Santos Felipe", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4025", "matricula": "4025", "nome": "Nathalia Mott Moraes Barros", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4724", "matricula": "4724", "nome": "Samuel Pires Malheiros", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4374", "matricula": "4374", "nome": "Sarah Conte Pires Pereira", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4977", "matricula": "4977", "nome": "Stella Cruz Neves", "turma": "2º ANO A", "periodo": "manha"}, {"id": "4227", "matricula": "4227", "nome": "Tiago Vilela Kikumori", "turma": "2º ANO A", "periodo": "manha"}, {"id": "3965", "matricula": "3965", "nome": "Bernardo Capo Baldacim", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4840", "matricula": "4840", "nome": "Breno Fernandes Viana", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4900", "matricula": "4900", "nome": "Davi de Oliveira Lima", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4867", "matricula": "4867", "nome": "Dom Camargo Castellani Souto Barbosa Marques", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4334", "matricula": "4334", "nome": "Giullia Marques dos Reis Cunha", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4703", "matricula": "4703", "nome": "GUSTAVO YUJUN MORI CHO", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4222", "matricula": "4222", "nome": "Joaquim Almeida Simoes", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4152", "matricula": "4152", "nome": "Kaue Riki Agarinakamura", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4883", "matricula": "4883", "nome": "Laura Cassador de Oliveira", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4056", "matricula": "4056", "nome": "Letícia Franco Rodrigues", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4192", "matricula": "4192", "nome": "Lucca Canniato Toni", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4431", "matricula": "4431", "nome": "Lucca Guedes Sonohara", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4875", "matricula": "4875", "nome": "Luigi Cruz Paganim", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4911", "matricula": "4911", "nome": "Manuela Bezelga Bernardi", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4066", "matricula": "4066", "nome": "Maria Alice Verdelho Leão Nakamassu", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4037", "matricula": "4037", "nome": "Maya Beck Bandolim", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4010", "matricula": "4010", "nome": "Noah Zaffalon Tirone", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4956", "matricula": "4956", "nome": "Pietro Guedes Ferreira", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4246", "matricula": "4246", "nome": "Serena de Castro Andrade dos Santos", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4299", "matricula": "4299", "nome": "Sofia Caseiro Caillet Bois", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4328", "matricula": "4328", "nome": "Sophie Heluany Viviani", "turma": "2º ANO B", "periodo": "manha"}, {"id": "4819", "matricula": "4819", "nome": "Alice Fagundes de Camargo", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4895", "matricula": "4895", "nome": "Carolina Nigro Matias", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "  4682", "matricula": "  4682", "nome": "Chiara Languidi Pinto", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4487", "matricula": "4487", "nome": "Daniel Rocha Favarin", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4067", "matricula": "4067", "nome": "Gilberto Villela de Castro", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4925", "matricula": "4925", "nome": "Heloísa Angeli Brito", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4310", "matricula": "4310", "nome": "Laura Ferreira Viana", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4440", "matricula": "4440", "nome": "Lorena Romeo Macedo", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4210", "matricula": "4210", "nome": "Lorenzo Bernardino de Araujo Domingues", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4332", "matricula": "4332", "nome": "Mauricio Kurdejak Francini", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4740", "matricula": "4740", "nome": "Murilo Kasabian Pin", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4167", "matricula": "4167", "nome": "Nicolas dos Santos Hartt", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4909", "matricula": "4909", "nome": "Olivia Marçal Barbosa", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4005", "matricula": "4005", "nome": "Romeo Eduardo Adda Criscuolo", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4922", "matricula": "4922", "nome": "Victor Manoel Cunha Menezes", "turma": "2º ANO C", "periodo": "tarde"}, {"id": "4212", "matricula": "4212", "nome": "Alice Maciel Ceravolo de Oliveira", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "5031", "matricula": "5031", "nome": "BEATRIZ GRANER CIPARONI", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4401", "matricula": "4401", "nome": "Beatriz Niubó Romero", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4276", "matricula": "4276", "nome": "Benjamim Alves Bispo", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4874", "matricula": "4874", "nome": "Bento Luis Azeredo dos Santos", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4820", "matricula": "4820", "nome": "Bernardo Morisson Carreira", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4993", "matricula": "4993", "nome": "Clara Norberto Duque", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4202", "matricula": "4202", "nome": "Enrico Cerri Camargo Vaqueiro", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4451", "matricula": "4451", "nome": "Enzo Gabriel Gouveia Zanelatto", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4436", "matricula": "4436", "nome": "Gabriel Navarro Mussumeci Canhedo", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4839", "matricula": "4839", "nome": "Gustavo Lusitano Quines", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4242", "matricula": "4242", "nome": "Joana Carrer Lima", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4827", "matricula": "4827", "nome": "Letícia da Costa Boscolo", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4535", "matricula": "4535", "nome": "Manoela Martins de Oliveira", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4168", "matricula": "4168", "nome": "Pietro Gomes Mennella", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4220", "matricula": "4220", "nome": "Raul Cotrim", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4383", "matricula": "4383", "nome": "Sofia Mazzuca Abrantes Rossetto", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "4739", "matricula": "4739", "nome": "Tomás Kasabian Pin", "turma": "2º ANO D", "periodo": "tarde"}, {"id": "3868", "matricula": "3868", "nome": "Arthur Gomes Castoldi", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4968", "matricula": "4968", "nome": "Arthur Lorenzo Gonzalez Novais", "turma": "3º ANO A", "periodo": "manha"}, {"id": "3790", "matricula": "3790", "nome": "Artur Passarini Gatto", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4142", "matricula": "4142", "nome": "Bernardo Costa", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4303", "matricula": "4303", "nome": "Bernardo Lazaretti Cippollini", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4252", "matricula": "4252", "nome": "Caetano Salateo Ramos Lauriano", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4736", "matricula": "4736", "nome": "Carolina Karis Neri de Aguiar", "turma": "3º ANO A", "periodo": "manha"}, {"id": "3995", "matricula": "3995", "nome": "Enzo Leal Lee", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4065", "matricula": "4065", "nome": "Gabriel Carnauba Guimaraes", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4433", "matricula": "4433", "nome": "Giovanna Tagliaferro Palhares", "turma": "3º ANO A", "periodo": "manha"}, {"id": "3690", "matricula": "3690", "nome": "Guilherme Lima Silva", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4554", "matricula": "4554", "nome": "Guilherme Mendonça de Oliveira", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4906", "matricula": "4906", "nome": "Isabela Winter Marcondes Sales da Costa", "turma": "3º ANO A", "periodo": "manha"}, {"id": "3864", "matricula": "3864", "nome": "Lucca de Carvalho Figueiredo Santos", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4841", "matricula": "4841", "nome": "Luis Moreira Zago", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4325", "matricula": "4325", "nome": "Maria Eduarda de Andrade Godoy", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4835", "matricula": "4835", "nome": "Maria Fernanda Lucke Marques", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4292", "matricula": "4292", "nome": "Maria Luiza Scagliusi Marson Seabra Elias", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4931", "matricula": "4931", "nome": "Mariah Gaspar Oliveira", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4258", "matricula": "4258", "nome": "Mariana Akemi Aoyama Baba", "turma": "3º ANO A", "periodo": "manha"}, {"id": "3978", "matricula": "3978", "nome": "Matteo Feixas Molinaro", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4126", "matricula": "4126", "nome": "Olívia Rodrigues Delgado", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4897", "matricula": "4897", "nome": "RAFAEL FERNANDES MIRANDA VALENTIM", "turma": "3º ANO A", "periodo": "manha"}, {"id": "3863", "matricula": "3863", "nome": "Samer Abou Kohl", "turma": "3º ANO A", "periodo": "manha"}, {"id": "5008", "matricula": "5008", "nome": "Samuel Andrade Gouveia da Silva", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4857", "matricula": "4857", "nome": "Sara Araujo Sagges", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4768", "matricula": "4768", "nome": "Sofia Alessandra Moraes da Silva", "turma": "3º ANO A", "periodo": "manha"}, {"id": "3985", "matricula": "3985", "nome": "Theo Luis de Oliveira", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4012", "matricula": "4012", "nome": "Valentina Scarin Martin", "turma": "3º ANO A", "periodo": "manha"}, {"id": "4042", "matricula": "4042", "nome": "Antônio Leitão de Almeida", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "3766", "matricula": "3766", "nome": "Beatriz Oliveira Lima de Satt", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "5036", "matricula": "5036", "nome": "BRUNO LOZANO POZZA", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4964", "matricula": "4964", "nome": "Gabriel Bonjorno Lobosco da Silva", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4547", "matricula": "4547", "nome": "Giulia Crema Gianfelice", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "3723", "matricula": "3723", "nome": "Heitor de Araujo Muzel", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4318", "matricula": "4318", "nome": "Helena Albuquerque Faiçal Corvo", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4460", "matricula": "4460", "nome": "Isabela Duarte dos Santos Lins Marques", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4408", "matricula": "4408", "nome": "Leonardo Araujo Mendonça", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4099", "matricula": "4099", "nome": "Liz Pontes Ferreira", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "3897", "matricula": "3897", "nome": "Manuela Roscia Momesso Pereira", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4810", "matricula": "4810", "nome": "Maria Clara Bione Mafort", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "3850", "matricula": "3850", "nome": "Maria Eduarda Trevisani Mena Barreto", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4549", "matricula": "4549", "nome": "Mariah Simões Pereira", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4570", "matricula": "4570", "nome": "Pedro Henrique Alves Rossi", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "3851", "matricula": "3851", "nome": "Theo Tortorelli Escaleira", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4917", "matricula": "4917", "nome": "YASMIN FERNANDES BORGES", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4694", "matricula": "4694", "nome": "ZEIN ZEIDANI", "turma": "3º ANO C", "periodo": "tarde"}, {"id": "4571", "matricula": "4571", "nome": "Beatriz do Nascimento Pelegrino", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4850", "matricula": "4850", "nome": "Benício Dias Oliveira", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "3885", "matricula": "3885", "nome": "Bernardo Sakagawa de Azevedo", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4013", "matricula": "4013", "nome": "Dom de Castro Pequeno", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4847", "matricula": "4847", "nome": "Emanueli Rodrigues", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "3973", "matricula": "3973", "nome": "Felipe Araujo Salazar Gutierres", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4882", "matricula": "4882", "nome": "Isabella Almada Viterbo de Aragão", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4770", "matricula": "4770", "nome": "Kelvyn Alexandre Gonçalves da Silva Mari", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4254", "matricula": "4254", "nome": "Lorena Cardoso Salles", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4255", "matricula": "4255", "nome": "Lucas Cardoso Salles", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4904", "matricula": "4904", "nome": "Luiza Alves Geremias", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4779", "matricula": "4779", "nome": "Manuela Alvarez Cezar", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4856", "matricula": "4856", "nome": "Maria Eduarda Santana Mascarenhas", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4862", "matricula": "4862", "nome": "Noah Gagliardi de Sousa Silva", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4691", "matricula": "4691", "nome": "Rebecca Pagan Almeida Mercês", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4910", "matricula": "4910", "nome": "VALENTINA DOS SANTOS NICOLAU", "turma": "3º ANO D", "periodo": "tarde"}, {"id": "4877", "matricula": "4877", "nome": "João Miguel Albuquerque Nobre", "turma": "3º ANO Matrícula - Tarde", "periodo": "tarde"}, {"id": "4434", "matricula": "4434", "nome": "Arthur Flumignan Rocha", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3920", "matricula": "3920", "nome": "Bárbara Rodrigues Lourenção", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4979", "matricula": "4979", "nome": "Benjamin Laudino Guimarães", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4046", "matricula": "4046", "nome": "Bernardo Alberani Lopes de Paula", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4473", "matricula": "4473", "nome": "Daniel Oliveira", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4783", "matricula": "4783", "nome": "Diego Lucca Coelho Delucci", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4306", "matricula": "4306", "nome": "Eduardo Henrique Brandl Maia", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4125", "matricula": "4125", "nome": "Eduardo Rodrigues Delgado", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3632", "matricula": "3632", "nome": "Gabriel Lopes Freire Silva", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4077", "matricula": "4077", "nome": "Gabriele Capelo França", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4589", "matricula": "4589", "nome": "Giovanna Spigolon Ruggero", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3941", "matricula": "3941", "nome": "Giulia Correa Vazquez", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4564", "matricula": "4564", "nome": "Helena Bueno Gorgatti Almeida", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4073", "matricula": "4073", "nome": "Joao Diniz Costa", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4727", "matricula": "4727", "nome": "Julia Biazzi Rocco Coimbra Cerqueira", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3654", "matricula": "3654", "nome": "Lara Mott Bernardo Delphino", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3771", "matricula": "3771", "nome": "Leonardo Spyros Barranco Karabourniotis", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4474", "matricula": "4474", "nome": "Luísa Oliveira", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4313", "matricula": "4313", "nome": "Marcela Grosso Nogoseki de Oliveira", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3968", "matricula": "3968", "nome": "Marcello Quattrucci Scartezini Borges", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4448", "matricula": "4448", "nome": "Maria Lis Ferreira Alves", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4999", "matricula": "4999", "nome": "MARIAH BENGUELA LYRIO MORIGGE", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4946", "matricula": "4946", "nome": "Melissa Canevazzi", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3804", "matricula": "3804", "nome": "Pedro Henrique de Castilho Lucchesi", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3969", "matricula": "3969", "nome": "Rogerio Quattrucci Scartezini Borges", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3636", "matricula": "3636", "nome": "Sophia dos Anjos Freitas", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3900", "matricula": "3900", "nome": "Theo Roberto Farat Colber", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3940", "matricula": "3940", "nome": "Thomas Correa Vazquez", "turma": "4º ANO A", "periodo": "manha"}, {"id": "3531", "matricula": "3531", "nome": "Yuri Pisciolaro Gonsales", "turma": "4º ANO A", "periodo": "manha"}, {"id": "4373", "matricula": "4373", "nome": "Alice Conte Pires Pereira", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "4225", "matricula": "4225", "nome": "Allana Hatagami Boldarim", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "3653", "matricula": "3653", "nome": "Antonella Chiaradia Pires Silvestrini", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "4221", "matricula": "4221", "nome": "Benício Jardim Andrade Maia", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "4165", "matricula": "4165", "nome": "Davi Galindo Pinheiro dos Santos", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "3701", "matricula": "3701", "nome": "Felipe Zanasi Ribeiro", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "3775", "matricula": "3775", "nome": "Giovanna Pires de Queiroz Melo", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "4818", "matricula": "4818", "nome": "Guilhermo Fagundes de Camargo", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "4749", "matricula": "4749", "nome": "Henrique Viana Zucare", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "3749", "matricula": "3749", "nome": "João Lucas Azevedo da Costa", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "3976", "matricula": "3976", "nome": "Joaquim Marques de Azevedo Pizarro", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "3615", "matricula": "3615", "nome": "Júlia Guirado Martins Janeiro", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "4960", "matricula": "4960", "nome": "Kauan Davis Xavier", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "3587", "matricula": "3587", "nome": "Lara Cardoso da Silva Piccoli Araujo", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "5030", "matricula": "5030", "nome": "Lavínia Graner Ciparoni", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "3644", "matricula": "3644", "nome": "Liz Alencar Santo Andre", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "4386", "matricula": "4386", "nome": "Liz Ferreira dos Santos", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "4402", "matricula": "4402", "nome": "Lucca Niubó Romero", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "4734", "matricula": "4734", "nome": "Miguel Alho Matos", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "4110", "matricula": "4110", "nome": "Paschoal Caruso Neto", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "4216", "matricula": "4216", "nome": "Valentina Teixeira Patricio", "turma": "4º ANO C", "periodo": "tarde"}, {"id": "3488", "matricula": "3488", "nome": "Caio Dianezi Christofani", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3454", "matricula": "3454", "nome": "Eduardo Nogueira Abrahão", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3628", "matricula": "3628", "nome": "Enzo Squiavolin Marsola do Carmo", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3923", "matricula": "3923", "nome": "Gabriel Rezende dos Santos", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3564", "matricula": "3564", "nome": "Gabriela Tartuce Cepeda Leite Morgado", "turma": "5º ANO A", "periodo": "manha"}, {"id": "4710", "matricula": "4710", "nome": "Guilherme Machado Silva", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3351", "matricula": "3351", "nome": "Guilherme Mott Moraes Barros", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3568", "matricula": "3568", "nome": "Gustavo Tartuce Cepeda Leite Morgado", "turma": "5º ANO A", "periodo": "manha"}, {"id": "4899", "matricula": "4899", "nome": "Isabella Ursini Silva", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3780", "matricula": "3780", "nome": "Isadora Zavatta Ramos", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3543", "matricula": "3543", "nome": "João Manso de Oliveira", "turma": "5º ANO A", "periodo": "manha"}, {"id": "4203", "matricula": "4203", "nome": "Julia de Assis Ruedi", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3614", "matricula": "3614", "nome": "Leonardo Adurens Morais", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3361", "matricula": "3361", "nome": "Leticia Arantes Mott", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3428", "matricula": "3428", "nome": "Lorenzo da Mota Grecco", "turma": "5º ANO A", "periodo": "manha"}, {"id": "4990", "matricula": "4990", "nome": "Malu Gomes Figueiredo freitas", "turma": "5º ANO A", "periodo": "manha"}, {"id": "4249", "matricula": "4249", "nome": "Murilo de Assis Silva", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3478", "matricula": "3478", "nome": "Olivia Matheus Maragni", "turma": "5º ANO A", "periodo": "manha"}, {"id": "3782", "matricula": "3782", "nome": "Rafael Galotto Passarini Godoy", "turma": "5º ANO A", "periodo": "manha"}, {"id": "4317", "matricula": "4317", "nome": "Alice Novelli Matos", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3667", "matricula": "3667", "nome": "Augusto Mangeti Metzner de Souza", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3854", "matricula": "3854", "nome": "Caua Dornelles Rotta Ferreira", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3511", "matricula": "3511", "nome": "Dante Augusto Francolin Rodrigues", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3698", "matricula": "3698", "nome": "Eliza Orsi Campos Ruberti", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3887", "matricula": "3887", "nome": "Gabriela Guimaraes Silva", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3873", "matricula": "3873", "nome": "Gabriella Miya Vieira Takamura", "turma": "5º ANO B", "periodo": "manha"}, {"id": "4135", "matricula": "4135", "nome": "Jorge Guirado Mattar Faggioni", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3712", "matricula": "3712", "nome": "Lais de Lucca Dimberio", "turma": "5º ANO B", "periodo": "manha"}, {"id": "4050", "matricula": "4050", "nome": "Larissa Marques Rodrigues", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3355", "matricula": "3355", "nome": "Leticia Costa Cepeda Morgado", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3924", "matricula": "3924", "nome": "Luana Bezerra dos Santos", "turma": "5º ANO B", "periodo": "manha"}, {"id": "4673", "matricula": "4673", "nome": "Mila Omar Abdallah", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3779", "matricula": "3779", "nome": "Murilo Zavatta Ramos", "turma": "5º ANO B", "periodo": "manha"}, {"id": "4141", "matricula": "4141", "nome": "Paulo Vicente Ballarin Lazaro", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3459", "matricula": "3459", "nome": "Pedro Ribeiro Marcondes Costa", "turma": "5º ANO B", "periodo": "manha"}, {"id": "4587", "matricula": "4587", "nome": "Rafaella Sofia Barchetta Navajas", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3306", "matricula": "3306", "nome": "Romulo Diorio Broffel Rodrigues", "turma": "5º ANO B", "periodo": "manha"}, {"id": "4358", "matricula": "4358", "nome": "Sam Almeida Araujo", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3591", "matricula": "3591", "nome": "Sofia de Oliveira Kalil", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3554", "matricula": "3554", "nome": "Sophia Gatti Melo", "turma": "5º ANO B", "periodo": "manha"}, {"id": "3545", "matricula": "3545", "nome": "Alice Ferreira Viana", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4890", "matricula": "4890", "nome": "Álvaro Inácio Coutinho Cordeiro", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4689", "matricula": "4689", "nome": "Anne Fertonani Perrechil", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3419", "matricula": "3419", "nome": "Augusto da Rocha Martins", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4902", "matricula": "4902", "nome": "Beatriz Kanashiro Monte", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3445", "matricula": "3445", "nome": "Bernardo Bezerra Ardito", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3740", "matricula": "3740", "nome": "Bernardo Reis Sella", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3354", "matricula": "3354", "nome": "Ester Guimarães Valente", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3457", "matricula": "3457", "nome": "Gabriel Marco Moreira Nunes", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3599", "matricula": "3599", "nome": "Gabriela Fagundes Hojaij", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4102", "matricula": "4102", "nome": "Giovana Interlandi Barroquello", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3513", "matricula": "3513", "nome": "Isabella de Mello Manso", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3842", "matricula": "3842", "nome": "Isadora Peres Assunção Armando", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3352", "matricula": "3352", "nome": "Jose Vinycius Ferreira da Silva", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4092", "matricula": "4092", "nome": "Khaleb Santos Lopes Ferreira", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4868", "matricula": "4868", "nome": "Laura Simieli Perez", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3849", "matricula": "3849", "nome": "Lorena Buarque Cabral", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4924", "matricula": "4924", "nome": "Manuela Angeli Brito", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4885", "matricula": "4885", "nome": "Manuela de Sá Miranda Lopes", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3492", "matricula": "3492", "nome": "Manuella Marano Romani Tome", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4608", "matricula": "4608", "nome": "Maria Victoria Valezim", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4876", "matricula": "4876", "nome": "Matteo de Moraes Araujo Dutra", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4424", "matricula": "4424", "nome": "Nathan Martins Lasevitch", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3527", "matricula": "3527", "nome": "Nicolas Boscolo Souto", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4761", "matricula": "4761", "nome": "Noah Oliveira Martins", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3577", "matricula": "3577", "nome": "Pedro Henrique Venaglia Pereira", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "3512", "matricula": "3512", "nome": "Rafael de Mello Manso", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4849", "matricula": "4849", "nome": "Raul Borodinas Brasil Costa", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4887", "matricula": "4887", "nome": "Thiago Akira Hada", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4224", "matricula": "4224", "nome": "Yasmin Hatagami Boldarim", "turma": "5º ANO C", "periodo": "tarde"}, {"id": "4921", "matricula": "4921", "nome": "Alice Munhoz Andreoli Marcondes", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3400", "matricula": "3400", "nome": "Bella Zaffalon Tirone", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4357", "matricula": "4357", "nome": "Enrico Laves Damian", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4063", "matricula": "4063", "nome": "Gustavo Vianna Quio", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4032", "matricula": "4032", "nome": "Heitor Domingues Pasetto", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3646", "matricula": "3646", "nome": "Henrique Emanuel de Sousa Loureiro", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4869", "matricula": "4869", "nome": "Isabela beskow Zumckeller", "turma": "6º ANO A", "periodo": "manha"}, {"id": "5003", "matricula": "5003", "nome": "Joaquim Maciel Teles Moraes", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4923", "matricula": "4923", "nome": "LETÍCIA JORTE LEITE", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3309", "matricula": "3309", "nome": "Lorenzo Pires Rozzetti", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3002", "matricula": "3002", "nome": "Lucca Feixas Molinaro", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4277", "matricula": "4277", "nome": "Luisa Flumignan Rocha", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4889", "matricula": "4889", "nome": "Manuela Martins Viola", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3452", "matricula": "3452", "nome": "Maria Eduarda Saldeado Caldeira", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4958", "matricula": "4958", "nome": "Maria Sofia Alves dos Santos", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3207", "matricula": "3207", "nome": "Marina Hernandez Calçada", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4143", "matricula": "4143", "nome": "Matteo Franciulli Picholani", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3670", "matricula": "3670", "nome": "Maya Dias Alves", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4002", "matricula": "4002", "nome": "Miguel Cruvinel de Souza Bremenkamp", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3785", "matricula": "3785", "nome": "Miguel Henrique Oliveira de Goes", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3341", "matricula": "3341", "nome": "Nicole Maruta Siqueira", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3596", "matricula": "3596", "nome": "Pedro Capo Baldacim", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3091", "matricula": "3091", "nome": "Pedro Gabriel Bernardo dos Santos", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3519", "matricula": "3519", "nome": "Rafael Araujo Lopes Gabilan", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4872", "matricula": "4872", "nome": "Rebeca de Almeida Souza Justino", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3631", "matricula": "3631", "nome": "Ricardo Isao Aoyama Baba", "turma": "6º ANO A", "periodo": "manha"}, {"id": "3484", "matricula": "3484", "nome": "Samantha Motta Quintal Bonilha", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4467", "matricula": "4467", "nome": "Valentina Moreira Ferrari", "turma": "6º ANO A", "periodo": "manha"}, {"id": "4995", "matricula": "4995", "nome": "Alexander Stamoglou", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4950", "matricula": "4950", "nome": "Alicia Vieira Coutinho Moreira", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4054", "matricula": "4054", "nome": "Beatriz Leite Peloso", "turma": "6º ANO B", "periodo": "manha"}, {"id": "3147", "matricula": "3147", "nome": "Eduardo do Amaral Pereira", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4315", "matricula": "4315", "nome": "Fernando Friaes Nabarro", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4987", "matricula": "4987", "nome": "Filipe Petica Siqueira", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4959", "matricula": "4959", "nome": "Gabriel Catelan Gonzalez Alves", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4982", "matricula": "4982", "nome": "Gabriel Zenhyun Kim Nakazato", "turma": "6º ANO B", "periodo": "manha"}, {"id": "3481", "matricula": "3481", "nome": "Guilherme Ferro Bernardino", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4613", "matricula": "4613", "nome": "Gustavo Fernandes Posso", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4637", "matricula": "4637", "nome": "Isabella Domingos Campos Paim", "turma": "6º ANO B", "periodo": "manha"}, {"id": "3384", "matricula": "3384", "nome": "Jamal de Castro Andrade dos Santos", "turma": "6º ANO B", "periodo": "manha"}, {"id": "3647", "matricula": "3647", "nome": "Joao Victor Gomes Ferreira", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4312", "matricula": "4312", "nome": "Joao Vitor Grosso Nogoseki de Oliveira", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4086", "matricula": "4086", "nome": "Kaua Pereira Rodrigues", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4934", "matricula": "4934", "nome": "Mariah Gavioli Assis Santos", "turma": "6º ANO B", "periodo": "manha"}, {"id": "3523", "matricula": "3523", "nome": "Mariana Ramos Nogueira", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4823", "matricula": "4823", "nome": "MOHAMAD EL AMIR HACHEM", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4061", "matricula": "4061", "nome": "Nathalia Santoro Joia Zugatto", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4804", "matricula": "4804", "nome": "Pablo Toshi Oda Grilli", "turma": "6º ANO B", "periodo": "manha"}, {"id": "3456", "matricula": "3456", "nome": "Pedro Campaner", "turma": "6º ANO B", "periodo": "manha"}, {"id": "3522", "matricula": "3522", "nome": "Pedro Ramos Nogueira", "turma": "6º ANO B", "periodo": "manha"}, {"id": "3441", "matricula": "3441", "nome": "Rafael Nunner Parreira", "turma": "6º ANO B", "periodo": "manha"}, {"id": "3243", "matricula": "3243", "nome": "Raphael Bragatto Fiori Borrelli", "turma": "6º ANO B", "periodo": "manha"}, {"id": "3281", "matricula": "3281", "nome": "Valentina Silva Carvalho", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4916", "matricula": "4916", "nome": "VITTOR RIBEIRO NOBREGA DE PROENÇA PEREIRA", "turma": "6º ANO B", "periodo": "manha"}, {"id": "4717", "matricula": "4717", "nome": "Alice Siqueira Rubia", "turma": "7º ANO A", "periodo": "manha"}, {"id": "4068", "matricula": "4068", "nome": "Ana Julia Romero Batista de Moraes", "turma": "7º ANO A", "periodo": "manha"}, {"id": "2871", "matricula": "2871", "nome": "Beatriz Miki Agarinakamura", "turma": "7º ANO A", "periodo": "manha"}, {"id": "4973", "matricula": "4973", "nome": "Bernardo Iha de Oliveira", "turma": "7º ANO A", "periodo": "manha"}, {"id": "3336", "matricula": "3336", "nome": "Bernardo Matheus Maragni", "turma": "7º ANO A", "periodo": "manha"}, {"id": "4852", "matricula": "4852", "nome": "Caio Ribeiro Caires", "turma": "7º ANO A", "periodo": "manha"}, {"id": "4266", "matricula": "4266", "nome": "Davi Motta Oliveira", "turma": "7º ANO A", "periodo": "manha"}, {"id": "3028", "matricula": "3028", "nome": "Gabriel Sarkis Lima Melo", "turma": "7º ANO A", "periodo": "manha"}, {"id": "3980", "matricula": "3980", "nome": "João Max Alves Bispo", "turma": "7º ANO A", "periodo": "manha"}, {"id": "4762", "matricula": "4762", "nome": "Julia Moreira de Souza Paixão", "turma": "7º ANO A", "periodo": "manha"}, {"id": "4953", "matricula": "4953", "nome": "Letícia Palkovitz Farkas", "turma": "7º ANO A", "periodo": "manha"}, {"id": "3323", "matricula": "3323", "nome": "Maria Carolina Carvalho de Souza Turco", "turma": "7º ANO A", "periodo": "manha"}, {"id": "4199", "matricula": "4199", "nome": "Renato Carriello Santana", "turma": "7º ANO A", "periodo": "manha"}, {"id": "3183", "matricula": "3183", "nome": "Rodrigo Mastrocolo Bento", "turma": "7º ANO A", "periodo": "manha"}, {"id": "4760", "matricula": "4760", "nome": "Sofia Oliveira Martins", "turma": "7º ANO A", "periodo": "manha"}, {"id": "3259", "matricula": "3259", "nome": "Sophia Drigala Mijatovic dos Reis", "turma": "7º ANO A", "periodo": "manha"}, {"id": "2959", "matricula": "2959", "nome": "Barbara Gomes Marin", "turma": "7º ANO B", "periodo": "manha"}, {"id": "3116", "matricula": "3116", "nome": "Breno Pasquino Pereira", "turma": "7º ANO B", "periodo": "manha"}, {"id": "4139", "matricula": "4139", "nome": "Felipe Faustino Soares", "turma": "7º ANO B", "periodo": "manha"}, {"id": "2946", "matricula": "2946", "nome": "Gabriel dos Santos Marques", "turma": "7º ANO B", "periodo": "manha"}, {"id": "5005", "matricula": "5005", "nome": "Gabriela Piassi Santos", "turma": "7º ANO B", "periodo": "manha"}, {"id": "3730", "matricula": "3730", "nome": "Gabriella Del Vecchio Guerra", "turma": "7º ANO B", "periodo": "manha"}, {"id": "3095", "matricula": "3095", "nome": "Henrique Valente de Souza", "turma": "7º ANO B", "periodo": "manha"}, {"id": "4996", "matricula": "4996", "nome": "ISABELLA BOARATI DE OLIVEIRA", "turma": "7º ANO B", "periodo": "manha"}, {"id": "3101", "matricula": "3101", "nome": "Julia Ribeiro Marcondes Costa", "turma": "7º ANO B", "periodo": "manha"}, {"id": "2761", "matricula": "2761", "nome": "Lorenzo Bellini Navarro", "turma": "7º ANO B", "periodo": "manha"}, {"id": "4920", "matricula": "4920", "nome": "LUIZA DINIZ COSTA", "turma": "7º ANO B", "periodo": "manha"}, {"id": "4754", "matricula": "4754", "nome": "Marcela Alves dos Santos", "turma": "7º ANO B", "periodo": "manha"}, {"id": "3464", "matricula": "3464", "nome": "Marina Rovaroto Domingos", "turma": "7º ANO B", "periodo": "manha"}, {"id": "3238", "matricula": "3238", "nome": "Pietra Sayuri Hangae do Vale", "turma": "7º ANO B", "periodo": "manha"}, {"id": "2763", "matricula": "2763", "nome": "Pietro da Mota Grecco", "turma": "7º ANO B", "periodo": "manha"}, {"id": "4624", "matricula": "4624", "nome": "Raquel Ribeiro de Oliveira", "turma": "7º ANO B", "periodo": "manha"}, {"id": "3806", "matricula": "3806", "nome": "Rittal Hussein Hojeij", "turma": "7º ANO B", "periodo": "manha"}, {"id": "3414", "matricula": "3414", "nome": "Sophia Matheus Milani", "turma": "7º ANO B", "periodo": "manha"}, {"id": "3461", "matricula": "3461", "nome": "Ana Beatriz Ortega da Silva", "turma": "8º ANO A", "periodo": "manha"}, {"id": "3823", "matricula": "3823", "nome": "Anna Bella Lima de Almeida", "turma": "8º ANO A", "periodo": "manha"}, {"id": "4522", "matricula": "4522", "nome": "Breno Machado de Paiva Santos", "turma": "8º ANO A", "periodo": "manha"}, {"id": "3247", "matricula": "3247", "nome": "Eduarda Stevanin Higa", "turma": "8º ANO A", "periodo": "manha"}, {"id": "4115", "matricula": "4115", "nome": "Eduardo Kenzo Paes Pantiga", "turma": "8º ANO A", "periodo": "manha"}, {"id": "3155", "matricula": "3155", "nome": "Gabriel Casado Pascale", "turma": "8º ANO A", "periodo": "manha"}, {"id": "3770", "matricula": "3770", "nome": "Guilherme Trisciuzzi Pereira", "turma": "8º ANO A", "periodo": "manha"}, {"id": "3736", "matricula": "3736", "nome": "Heitor Carrer Lima", "turma": "8º ANO A", "periodo": "manha"}, {"id": "4596", "matricula": "4596", "nome": "Henrique Koji Nakamoto", "turma": "8º ANO A", "periodo": "manha"}, {"id": "2719", "matricula": "2719", "nome": "Henrique Ramos Gomes", "turma": "8º ANO A", "periodo": "manha"}, {"id": "4001", "matricula": "4001", "nome": "Isaac Cruvinel de Souza Bremenkamp", "turma": "8º ANO A", "periodo": "manha"}, {"id": "4939", "matricula": "4939", "nome": "Isabelle Pezzutto Silva", "turma": "8º ANO A", "periodo": "manha"}, {"id": "3974", "matricula": "3974", "nome": "Laura Nunes Nena da Silva", "turma": "8º ANO A", "periodo": "manha"}, {"id": "2759", "matricula": "2759", "nome": "Laura Pisciolaro Alves", "turma": "8º ANO A", "periodo": "manha"}, {"id": "3334", "matricula": "3334", "nome": "Liara Dias Alves", "turma": "8º ANO A", "periodo": "manha"}, {"id": "4470", "matricula": "4470", "nome": "Maria Luiza Ballarin Lazaro", "turma": "8º ANO A", "periodo": "manha"}, {"id": "3194", "matricula": "3194", "nome": "Miguel Mendonca de Oliveira", "turma": "8º ANO A", "periodo": "manha"}, {"id": "4407", "matricula": "4407", "nome": "Vinicius Gati Krasnavicius", "turma": "8º ANO A", "periodo": "manha"}, {"id": "3086", "matricula": "3086", "nome": "Waldemar da Rocha Junior", "turma": "8º ANO A", "periodo": "manha"}, {"id": "4253", "matricula": "4253", "nome": "Alice Salateo Vicentin", "turma": "8º ANO B", "periodo": "manha"}, {"id": "4722", "matricula": "4722", "nome": "Bernardo Lopes Navarro", "turma": "8º ANO B", "periodo": "manha"}, {"id": "3786", "matricula": "3786", "nome": "Davi Lucca Oliveira de Goes", "turma": "8º ANO B", "periodo": "manha"}, {"id": "2902", "matricula": "2902", "nome": "Felipe Mott Bernardo Delphino", "turma": "8º ANO B", "periodo": "manha"}, {"id": "3310", "matricula": "3310", "nome": "Giovanna Rodrigues Carvalho", "turma": "8º ANO B", "periodo": "manha"}, {"id": "2879", "matricula": "2879", "nome": "Henrique Arantes Mott", "turma": "8º ANO B", "periodo": "manha"}, {"id": "2523", "matricula": "2523", "nome": "Julia Araujo Lopes Gabilan", "turma": "8º ANO B", "periodo": "manha"}, {"id": "4611", "matricula": "4611", "nome": "Leonardo Rodrigues Delgado", "turma": "8º ANO B", "periodo": "manha"}, {"id": "4719", "matricula": "4719", "nome": "Lorena Feitosa Vieira", "turma": "8º ANO B", "periodo": "manha"}, {"id": "2967", "matricula": "2967", "nome": "Lorena Santos de Camargo Lazare", "turma": "8º ANO B", "periodo": "manha"}, {"id": "3230", "matricula": "3230", "nome": "Lorenzo Dauzacker Martins Fernandes", "turma": "8º ANO B", "periodo": "manha"}, {"id": "4347", "matricula": "4347", "nome": "Lucas Gomes da Silva Pombal", "turma": "8º ANO B", "periodo": "manha"}, {"id": "2536", "matricula": "2536", "nome": "Melissa Bovo Sartoreli", "turma": "8º ANO B", "periodo": "manha"}, {"id": "4380", "matricula": "4380", "nome": "Raul de Carvalho Soares", "turma": "8º ANO B", "periodo": "manha"}, {"id": "3301", "matricula": "3301", "nome": "Sofia Nogueira Abrahao", "turma": "8º ANO B", "periodo": "manha"}, {"id": "3778", "matricula": "3778", "nome": "Theo Henrique de Paiva Kovacs", "turma": "8º ANO B", "periodo": "manha"}, {"id": "2281", "matricula": "2281", "nome": "Ana Beatriz Barbosa Martins", "turma": "9º ANO A", "periodo": "manha"}, {"id": "4410", "matricula": "4410", "nome": "Ana Clara Chambo Altavista", "turma": "9º ANO A", "periodo": "manha"}, {"id": "4250", "matricula": "4250", "nome": "Ana Clara de Assis Silva", "turma": "9º ANO A", "periodo": "manha"}, {"id": "4709", "matricula": "4709", "nome": "Ana Clara Machado", "turma": "9º ANO A", "periodo": "manha"}, {"id": "4204", "matricula": "4204", "nome": "Arthur Hatagami Boldarim", "turma": "9º ANO A", "periodo": "manha"}, {"id": "4471", "matricula": "4471", "nome": "Arthur Henrique da Silva Hauck", "turma": "9º ANO A", "periodo": "manha"}, {"id": "2538", "matricula": "2538", "nome": "Daniel Manso de Oliveira", "turma": "9º ANO A", "periodo": "manha"}, {"id": "5004", "matricula": "5004", "nome": "Enrico Piassi Naliatti", "turma": "9º ANO A", "periodo": "manha"}, {"id": "2715", "matricula": "2715", "nome": "Enzo Pinho Valente", "turma": "9º ANO A", "periodo": "manha"}, {"id": "3025", "matricula": "3025", "nome": "Felipe Prata Lozano", "turma": "9º ANO A", "periodo": "manha"}, {"id": "3015", "matricula": "3015", "nome": "Guilherme Casquel", "turma": "9º ANO A", "periodo": "manha"}, {"id": "2836", "matricula": "2836", "nome": "Guilherme Pinheiro Vannucchi", "turma": "9º ANO A", "periodo": "manha"}, {"id": "2887", "matricula": "2887", "nome": "Henrique Fortunato Ramos Mori", "turma": "9º ANO A", "periodo": "manha"}, {"id": "4098", "matricula": "4098", "nome": "Juliano Interlandi Barroquello", "turma": "9º ANO A", "periodo": "manha"}, {"id": "3132", "matricula": "3132", "nome": "Manuela Dias Lucio", "turma": "9º ANO A", "periodo": "manha"}, {"id": "2837", "matricula": "2837", "nome": "Manuela Pinheiro Vannucchi", "turma": "9º ANO A", "periodo": "manha"}, {"id": "3998", "matricula": "3998", "nome": "Maria Eduarda Rodrigues Venancio", "turma": "9º ANO A", "periodo": "manha"}, {"id": "3916", "matricula": "3916", "nome": "Murilo Carvalho Bolsarin", "turma": "9º ANO A", "periodo": "manha"}, {"id": "2811", "matricula": "2811", "nome": "Nicolas de Souza Neff", "turma": "9º ANO A", "periodo": "manha"}, {"id": "3838", "matricula": "3838", "nome": "Pedro Henrique Sacoman", "turma": "9º ANO A", "periodo": "manha"}, {"id": "3707", "matricula": "3707", "nome": "Rafael Bellucco Sumanjski", "turma": "9º ANO A", "periodo": "manha"}];
+
+// ===== HORÁRIOS PADRÃO =====
+let HORARIOS = { infM:'11:40', ano1M:'12:10', anos25M:'12:30', anos69M:'13:20', tarde:'13:10' };
+
+// ===== CONFIG =====
+let CFG = { hora:0, lancheManha:0, almoco:0, lancheTarde:0, jantar:0 };
+
+// ===== ESTADO =====
+let ME = null; // { uid, nome, role }
+let alunosExtra = [];
+let registrosProf = {}; // key: data_alunoId
+let registrosRef = {};  // key: data_alunoId
+let unsubs = [];
+
+// ===== UTILS =====
+function toast(msg, dur=2500){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),dur);
+}
+function hoje(){ return new Date().toISOString().split('T')[0]; }
+function fmtData(iso){ if(!iso)return''; const[y,m,d]=iso.split('-'); return`${d}/${m}/${y}`; }
+function toMin(t){ if(!t)return 0; const[h,m]=t.split(':').map(Number); return h*60+m; }
+function fromMin(m){ if(m<0)m=0; return`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
+function setSyncDot(on){ const d=document.getElementById('sync-dot'); if(d)d.classList.toggle('off',!on); }
+
+function getAluno(id){
+  return ALUNOS_BASE.find(a=>a.id===id) || alunosExtra.find(a=>a.id===id);
+}
+function todosAlunos(){
+  return [...ALUNOS_BASE,...alunosExtra].sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+}
+
+// ===== HORÁRIO DE REFERÊNCIA =====
+function horarioRefTurma(turma, periodo){
+  if(!turma) return null;
+  const t = turma.toLowerCase();
+  if(periodo==='tarde') return HORARIOS.tarde;
+  // manhã — saída
+  if(t.includes('mini')||t.includes('maternal')||t.includes('infantil')) return HORARIOS.infM;
+  if(t.includes('1º')) return HORARIOS.ano1M;
+  if(t.includes('2º')||t.includes('3º')||t.includes('4º')||t.includes('5º')) return HORARIOS.anos25M;
+  if(t.includes('6º')||t.includes('7º')||t.includes('8º')||t.includes('9º')) return HORARIOS.anos69M;
+  return null;
+}
+
+// ===== CÁLCULO DE HORAS =====
+function calcHoras(aluno, horReg, horRef, aulasExtra, almocouNoDia, jantouNoDia){
+  if(!horReg || !horRef) return null;
+  const reg=toMin(horReg), ref=toMin(horRef);
+  let diff = aluno.periodo==='manha' ? reg-ref : ref-reg;
+  if(almocouNoDia) diff-=30;
+  if(jantouNoDia) diff-=30;
+  const extraMin = Math.round((parseFloat(aulasExtra)||0)*60);
+  diff -= extraMin;
+  return Math.max(0, diff);
+}
+
+function calcTotal(minutos, regRef){
+  const h = (minutos||0)/60;
+  return h*(CFG.hora||0)
+    + (regRef?.lancheManha ? (CFG.lancheManha||0):0)
+    + (regRef?.almoco ? (CFG.almoco||0):0)
+    + (regRef?.lancheTarde ? (CFG.lancheTarde||0):0)
+    + (regRef?.jantar ? (CFG.jantar||0):0);
+}
+
+// ===== AUTH SCREENS =====
+function showScreen(id){
+  document.getElementById('loading').style.display='none';
+  ['login','register'].forEach(s=>{
+    const el=document.getElementById('screen-'+s);
+    el.style.display = s===id ? 'flex':'none';
+  });
+  document.getElementById('app').style.display='none';
+}
+
+function showApp(){
+  document.getElementById('loading').style.display='none';
+  document.getElementById('screen-login').style.display='none';
+  document.getElementById('screen-register').style.display='none';
+  document.getElementById('app').style.display='block';
+  buildNav();
+  loadAppData();
+}
+
+// ===== LOGIN =====
+async function fazerLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const senha=document.getElementById('login-senha').value;
+  const err=document.getElementById('login-erro');
+  err.textContent='';
+  if(!email||!senha){err.textContent='Preencha e-mail e senha.';return;}
+  try{
+    await auth.signInWithEmailAndPassword(email,senha);
+  }catch(e){
+    const msgs={
+      'auth/user-not-found':'Usuário não encontrado.',
+      'auth/wrong-password':'Senha incorreta.',
+      'auth/invalid-credential':'E-mail ou senha incorretos.',
+      'auth/too-many-requests':'Muitas tentativas. Tente mais tarde.'
+    };
+    err.textContent=msgs[e.code]||'Erro ao entrar. Verifique os dados.';
+  }
+}
+
+// ===== REGISTRO (primeiro acesso) =====
+async function criarConta(){
+  const nome=document.getElementById('reg-nome').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const senha=document.getElementById('reg-senha').value;
+  const codigo=document.getElementById('reg-codigo').value.trim().toUpperCase();
+  const err=document.getElementById('reg-erro');
+  err.textContent='';
+  if(!nome||!email||!senha||!codigo){err.textContent='Preencha todos os campos.';return;}
+  if(senha.length<6){err.textContent='Senha deve ter no mínimo 6 caracteres.';return;}
+  try{
+    // Verificar código de convite
+    const convDoc=await db.collection('convites').doc(codigo).get();
+    if(!convDoc.exists){err.textContent='Código de convite inválido ou expirado.';return;}
+    const convData=convDoc.data();
+    if(convData.usado){err.textContent='Este código já foi utilizado.';return;}
+    const role=convData.role;
+    // Criar usuário Firebase Auth via REST (sem afetar sessão atual)
+    const res=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FB.apiKey}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:senha,returnSecureToken:true})
+    });
+    const data=await res.json();
+    if(data.error){
+      const msgs={'EMAIL_EXISTS':'Este e-mail já está cadastrado.','WEAK_PASSWORD':'Senha muito fraca.'};
+      err.textContent=msgs[data.error.message]||'Erro ao criar conta: '+data.error.message;
+      return;
+    }
+    const uid=data.localId;
+    // Salvar usuário no Firestore
+    await db.collection('usuarios').doc(uid).set({nome,email,role,criadoEm:firebase.firestore.FieldValue.serverTimestamp()});
+    // Marcar convite como usado
+    await db.collection('convites').doc(codigo).update({usado:true,usadoPor:email});
+    // Fazer login
+    await auth.signInWithEmailAndPassword(email,senha);
+    toast('✅ Conta criada com sucesso!');
+  }catch(e){
+    err.textContent='Erro: '+e.message;
+  }
+}
+
+function sair(){ auth.signOut(); unsubs.forEach(u=>u&&u()); unsubs=[]; }
+
+// ===== AUTH LISTENER =====
+auth.onAuthStateChanged(async user=>{
+  if(user){
+    try{
+      const doc=await db.collection('usuarios').doc(user.uid).get();
+      if(doc.exists){
+        ME={uid:user.uid,...doc.data()};
+        document.getElementById('h-usuario').textContent=ME.nome+' · '+(ME.role==='admin'?'Admin':ME.role==='professora'?'Professora':'Refeitório');
+        showApp();
+      } else {
+        auth.signOut();
+        showScreen('login');
+      }
+    }catch{ showScreen('login'); }
+  } else {
+    showScreen('login');
+  }
+});
+
+// ===== NAV =====
+const TABS={
+  prof:{label:'📝 Prof.',roles:['admin','professora']},
+  ref:{label:'🍽️ Ref.',roles:['admin','refeitorio']},
+  relatorio:{label:'📊 Relatório',roles:['admin']},
+  alunos:{label:'👦 Alunos',roles:['admin']},
+  usuarios:{label:'👥 Usuários',roles:['admin']},
+  config:{label:'⚙️ Config.',roles:['admin']}
+};
+
+function buildNav(){
+  const nav=document.getElementById('main-nav');
+  nav.innerHTML='';
+  let first=null;
+  Object.entries(TABS).forEach(([id,tab])=>{
+    if(!tab.roles.includes(ME.role)) return;
+    if(!first) first=id;
+    const btn=document.createElement('button');
+    btn.textContent=tab.label;
+    btn.onclick=()=>showPage(id,btn);
+    nav.appendChild(btn);
+  });
+  if(first) showPage(first, nav.querySelector('button'));
+}
+
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#main-nav button').forEach(b=>b.classList.remove('active'));
+  const pg=document.getElementById('page-'+id);
+  if(pg) pg.classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(id==='prof') initPageProf();
+  if(id==='ref') initPageRef();
+  if(id==='relatorio') initRelatorio();
+  if(id==='alunos') renderAlunos();
+  if(id==='usuarios') renderUsuarios();
+  if(id==='config') loadConfigUI();
+}
+
+// ===== LOAD APP DATA =====
+async function loadAppData(){
+  // Config
+  try{
+    const cfgDoc=await db.collection('config').doc('precos').get();
+    if(cfgDoc.exists) CFG={...CFG,...cfgDoc.data()};
+    const horDoc=await db.collection('config').doc('horarios').get();
+    if(horDoc.exists) HORARIOS={...HORARIOS,...horDoc.data()};
+    const escolaDoc=await db.collection('config').doc('escola').get();
+    if(escolaDoc.exists){
+      const n=escolaDoc.data().nome;
+      if(n){ document.getElementById('h-escola').textContent=n; document.getElementById('cfg-escola').value=n; }
+    }
+    // Alunos extras
+    const extrasSnap=await db.collection('alunosExtra').get();
+    alunosExtra=extrasSnap.docs.map(d=>({id:d.id,...d.data()}));
+    setSyncDot(true);
+  }catch{ setSyncDot(false); }
+  populaSelectAluno();
+}
+
+// ===== ALUNOS =====
+function populaSelectAluno(){
+  const sel=document.getElementById('p-aluno');
+  if(!sel) return;
+  const val=sel.value;
+  const lista=todosAlunos();
+  sel.innerHTML='<option value="">Selecione o aluno...</option>'
+    +lista.map(a=>`<option value="${a.id}">${a.nome}${a.turma?' — '+a.turma:''}${a.matricula?' ('+a.matricula+')':''}</option>`).join('');
+  if(val) sel.value=val;
+}
+
+function renderAlunos(){
+  const busca=(document.getElementById('al-busca')?.value||'').toLowerCase();
+  const lista=busca
+    ? ALUNOS_BASE.filter(a=>a.nome.toLowerCase().includes(busca)||(a.turma||'').toLowerCase().includes(busca)||(a.matricula||'').includes(busca)).slice(0,40)
+    : [];
+  const el=document.getElementById('al-list');
+  if(!busca){el.innerHTML='<p style="font-size:.8rem;color:var(--g400);text-align:center;padding:12px">Digite para buscar entre 777 alunos</p>';return;}
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><p>Nenhum encontrado.</p></div>';return;}
+  el.innerHTML=lista.map(a=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--g100)">
+      <div>
+        <div style="font-weight:700;font-size:.88rem">${a.nome}</div>
+        <div style="font-size:.73rem;color:var(--g400)">${a.turma||''}${a.matricula?' · Mat. '+a.matricula:''}</div>
+      </div>
+      <span class="badge ${a.periodo==='manha'?'badge-b':'badge-o'}">${a.periodo==='manha'?'☀️ Manhã':'🌤 Tarde'}</span>
+    </div>`).join('');
+  // extras
+  const xEl=document.getElementById('al-extras-list');
+  if(!alunosExtra.length){xEl.innerHTML='';return;}
+  xEl.innerHTML='<p style="font-size:.8rem;font-weight:700;color:var(--g600);margin-bottom:6px">Alunos adicionados manualmente:</p>'
+    +alunosExtra.map(a=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--g100)">
+      <div><div style="font-weight:700;font-size:.85rem">${a.nome}</div><div style="font-size:.73rem;color:var(--g400)">${a.turma||''}</div></div>
+      <button onclick="removerAlunoExtra('${a.id}')" style="background:none;border:none;color:var(--r);cursor:pointer;font-size:1rem">✕</button>
+    </div>`).join('');
+}
+
+async function adicionarAlunoExtra(){
+  const nome=document.getElementById('al-nome').value.trim();
+  const turma=document.getElementById('al-turma').value.trim();
+  const periodo=document.getElementById('al-periodo').value;
+  if(!nome){toast('⚠️ Digite o nome');return;}
+  const ref=await db.collection('alunosExtra').add({nome,turma,periodo});
+  alunosExtra.push({id:ref.id,nome,turma,periodo});
+  document.getElementById('al-nome').value='';
+  document.getElementById('al-turma').value='';
+  populaSelectAluno(); renderAlunos();
+  toast('✅ Aluno adicionado!');
+}
+
+async function removerAlunoExtra(id){
+  if(!confirm('Remover?'))return;
+  await db.collection('alunosExtra').doc(id).delete();
+  alunosExtra=alunosExtra.filter(a=>a.id!==id);
+  populaSelectAluno(); renderAlunos();
+  toast('Removido');
+}
+
+// ===== PÁGINA PROFESSOR =====
+function initPageProf(){
+  const d=document.getElementById('p-data');
+  if(!d.value) d.value=hoje();
+  populaSelectAluno();
+  renderProfHoje();
+}
+
+function onAlunoChange(){
+  const alunoId=document.getElementById('p-aluno').value;
+  const al=getAluno(alunoId);
+  const info=document.getElementById('p-periodo-info');
+  const lblHora=document.getElementById('p-hora-label');
+  const inputRef=document.getElementById('p-hora-ref');
+  if(!al){info.style.display='none';calcularPreview();return;}
+  const periodo=al.periodo;
+  const horRef=horarioRefTurma(al.turma,periodo);
+  if(inputRef) inputRef.value=horRef||'';
+  info.style.display='block';
+  info.innerHTML=periodo==='manha'
+    ? `☀️ <strong>${al.nome}</strong> é do período <strong>Manhã</strong> · Aula termina às <strong>${horRef||'—'}</strong> · Registre o horário de <strong>saída</strong>`
+    : `🌤 <strong>${al.nome}</strong> é do período <strong>Tarde</strong> · Aula começa às <strong>${horRef||'—'}</strong> · Registre o horário de <strong>entrada</strong>`;
+  lblHora.textContent=periodo==='manha'?'Horário de saída (real)':'Horário de chegada (real)';
+  // Verificar se já tem registro do refeitório p/ esse dia
+  const data=document.getElementById('p-data').value||hoje();
+  const key=data+'_'+alunoId;
+  const rRef=registrosRef[key];
+  calcularPreview(rRef);
+}
+
+function calcularPreview(rRefOverride){
+  const alunoId=document.getElementById('p-aluno').value;
+  const al=getAluno(alunoId);
+  const horReg=document.getElementById('p-hora-reg').value;
+  const horRef=document.getElementById('p-hora-ref').value;
+  const aulasExtra=document.getElementById('p-aulas-extra').value;
+  const preview=document.getElementById('p-calc-preview');
+  if(!al||!horReg||!horRef){preview.style.display='none';return;}
+  const data=document.getElementById('p-data').value||hoje();
+  const key=data+'_'+alunoId;
+  const rRef=rRefOverride||registrosRef[key];
+  const almocou=!!rRef?.almoco;
+  const jantou=!!rRef?.jantar;
+  const minutos=calcHoras(al,horReg,horRef,aulasExtra,almocou,jantou);
+  const h=Math.floor(minutos/60), m=minutos%60;
+  const refMin=toMin(horRef), regMin=toMin(horReg);
+  const isManha=al.periodo==='manha';
+  const baseMin=isManha?regMin-refMin:refMin-regMin;
+  const extraMin=Math.round((parseFloat(aulasExtra)||0)*60);
+  preview.style.display='block';
+  preview.innerHTML=`<div class="calc-box">
+    <h3>🧮 Cálculo Automático</h3>
+    <div class="calc-row"><span>${isManha?'Saída real':'Chegada real'}</span><span>${horReg}</span></div>
+    <div class="calc-row deduct"><span>${isManha?'− Término da aula':'− Início da aula'}</span><span>${horRef}</span></div>
+    <div class="calc-row"><span>= Base</span><span>${fromMin(Math.max(0,baseMin))}</span></div>
+    ${almocou?`<div class="calc-row deduct"><span>− Almoço</span><span>00:30</span></div>`:''}
+    ${jantou?`<div class="calc-row deduct"><span>− Jantar</span><span>00:30</span></div>`:''}
+    ${extraMin>0?`<div class="calc-row deduct"><span>− Aulas extras</span><span>${fromMin(extraMin)}</span></div>`:''}
+    <div class="calc-row total"><span>TOTAL</span><span>${fromMin(minutos)}</span></div>
+    ${!almocou&&!jantou?'<div style="font-size:.72rem;color:var(--g400);margin-top:6px">⚠️ Refeitório ainda não confirmou refeições deste aluno nesta data.</div>':''}
+  </div>`;
+}
+
+async function salvarRegistroProf(){
+  const data=document.getElementById('p-data').value||hoje();
+  const alunoId=document.getElementById('p-aluno').value;
+  const horReg=document.getElementById('p-hora-reg').value;
+  const horRef=document.getElementById('p-hora-ref').value;
+  const aulasExtra=parseFloat(document.getElementById('p-aulas-extra').value)||0;
+  const obs=document.getElementById('p-obs').value.trim();
+  if(!alunoId){toast('⚠️ Selecione o aluno');return;}
+  if(!horReg){toast('⚠️ Informe o horário');return;}
+  const al=getAluno(alunoId);
+  if(!al){toast('⚠️ Aluno inválido');return;}
+  const key=data+'_'+alunoId;
+  const rRef=registrosRef[key];
+  const almocou=!!rRef?.almoco;
+  const jantou=!!rRef?.jantar;
+  const minutos=calcHoras(al,horReg,horRef,aulasExtra,almocou,jantou);
+  const btn=document.getElementById('p-btn-salvar');
+  btn.disabled=true; btn.textContent='Salvando...';
+  try{
+    await db.collection('registros_prof').doc(key).set({
+      data,alunoId,horarioRegistrado:horReg,horarioReferencia:horRef,
+      aulasExtra,minutosExtra:minutos,obs,
+      professora:ME.nome,criadoPor:ME.uid,
+      atualizadoEm:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    registrosProf[key]={data,alunoId,horarioRegistrado:horReg,horarioReferencia:horRef,aulasExtra,minutosExtra:minutos,obs};
+    document.getElementById('p-hora-reg').value='';
+    document.getElementById('p-aulas-extra').value='0';
+    document.getElementById('p-obs').value='';
+    document.getElementById('p-aluno').value='';
+    document.getElementById('p-periodo-info').style.display='none';
+    document.getElementById('p-calc-preview').style.display='none';
+    toast('✅ Registro salvo!');
+    renderProfHoje();
+  }catch{ toast('❌ Erro ao salvar. Verifique conexão.'); }
+  btn.disabled=false; btn.textContent='✅ Salvar Registro';
+}
+
+async function renderProfHoje(){
+  const data=document.getElementById('p-data')?.value||hoje();
+  const snap=await db.collection('registros_prof').where('data','==',data).get();
+  const regs=snap.docs.map(d=>({id:d.id,...d.data()}));
+  const el=document.getElementById('p-hoje-list');
+  if(!regs.length){el.innerHTML='<div class="empty"><div class="empty-ico">📋</div><p>Nenhum registro hoje.</p></div>';return;}
+  el.innerHTML=regs.map(r=>{
+    const al=getAluno(r.alunoId);
+    const nome=al?al.nome:'—';
+    const key=r.data+'_'+r.alunoId;
+    const rRef=registrosRef[key];
+    const h=Math.floor((r.minutosExtra||0)/60), m=(r.minutosExtra||0)%60;
+    return `<div class="reg-item">
+      <div class="reg-head">
+        <div><div class="reg-nome">${nome}</div><div class="reg-sub">${al?.turma||''} · ${al?.periodo==='manha'?'☀️ Manhã':'🌤 Tarde'}</div></div>
+        <div class="reg-horas">${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}</div>
+      </div>
+      <div class="reg-tags" style="margin-top:6px">
+        <span class="badge badge-b">⏰ ${fromMin(r.minutosExtra||0)}</span>
+        ${rRef?.lancheManha?'<span class="badge badge-g">☕ Lanche M</span>':''}
+        ${rRef?.almoco?'<span class="badge badge-g">🍽️ Almoço</span>':''}
+        ${rRef?.lancheTarde?'<span class="badge badge-g">🍪 Lanche T</span>':''}
+        ${rRef?.jantar?'<span class="badge badge-g">🌙 Jantar</span>':''}
+      </div>
+      ${r.obs?`<div style="font-size:.75rem;color:var(--g400);margin-top:4px">📝 ${r.obs}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ===== PÁGINA REFEITÓRIO =====
+function initPageRef(){
+  const d=document.getElementById('r-data');
+  if(!d.value) d.value=hoje();
+  carregarListaRef();
+}
+
+async function carregarListaRef(){
+  const data=document.getElementById('r-data').value||hoje();
+  const container=document.getElementById('ref-lista-container');
+  container.innerHTML='<div class="empty"><div class="empty-ico">⏳</div><p>Carregando...</p></div>';
+  // Carregar registros_ref do dia para preencher checks
+  try{
+    const snap=await db.collection('registros_ref').where('data','==',data).get();
+    snap.docs.forEach(d=>{ registrosRef[d.id]={id:d.id,...d.data()}; });
+  }catch{}
+  // Agrupar alunos por turma
+  const todos=todosAlunos();
+  const porTurma={};
+  todos.forEach(a=>{
+    const t=a.turma||'Sem turma';
+    if(!porTurma[t]) porTurma[t]=[];
+    porTurma[t].push(a);
+  });
+  const turmasOrd=Object.keys(porTurma).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  let html=`<div class="card no-print" style="font-size:.8rem;color:var(--g400);padding:12px">
+    📋 Marque as refeições consumidas. O sistema salva automaticamente.
+    <br><strong style="color:var(--g800)">Data: ${fmtData(data)}</strong>
+  </div>`;
+  turmasOrd.forEach(turma=>{
+    const alunos=porTurma[turma];
+    html+=`<div class="ref-turma-header">${turma}</div>
+    <div class="card" style="padding:0;overflow:hidden">`;
+    alunos.forEach(a=>{
+      const key=data+'_'+a.id;
+      const rr=registrosRef[key]||{};
+      html+=`<div class="ref-aluno-row" id="row-${a.id}">
+        <div class="ref-nome">${a.nome}<div style="font-size:.7rem;color:var(--g400)">${a.matricula||''}</div></div>
+        <div class="ref-checks">
+          <label class="ref-check"><input type="checkbox" ${rr.lancheManha?'checked':''} onchange="toggleRef('${a.id}','${data}','lancheManha',this.checked)"><span>☕</span></label>
+          <label class="ref-check"><input type="checkbox" ${rr.almoco?'checked':''} onchange="toggleRef('${a.id}','${data}','almoco',this.checked)"><span>🍽️</span></label>
+          <label class="ref-check"><input type="checkbox" ${rr.lancheTarde?'checked':''} onchange="toggleRef('${a.id}','${data}','lancheTarde',this.checked)"><span>🍪</span></label>
+          <label class="ref-check"><input type="checkbox" ${rr.jantar?'checked':''} onchange="toggleRef('${a.id}','${data}','jantar',this.checked)"><span>🌙</span></label>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  container.innerHTML=html;
+}
+
+async function toggleRef(alunoId, data, campo, valor){
+  const key=data+'_'+alunoId;
+  if(!registrosRef[key]) registrosRef[key]={data,alunoId,lancheManha:false,almoco:false,lancheTarde:false,jantar:false};
+  registrosRef[key][campo]=valor;
+  try{
+    await db.collection('registros_ref').doc(key).set(registrosRef[key],{merge:true});
+    setSyncDot(true);
+    // Recalcular preview do professor se o aluno estiver selecionado
+    const selAluno=document.getElementById('p-aluno')?.value;
+    if(selAluno===alunoId) calcularPreview(registrosRef[key]);
+  }catch{ setSyncDot(false); toast('❌ Erro ao salvar'); }
+}
+
+// ===== RELATÓRIO CONSOLIDADO =====
+function initRelatorio(){
+  const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const mEl=document.getElementById('rel-mes');
+  mEl.innerHTML=meses.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+  const hoje2=new Date();
+  mEl.value=hoje2.getMonth()+1;
+  const aEl=document.getElementById('rel-ano');
+  const a=hoje2.getFullYear();
+  aEl.innerHTML=[a-1,a,a+1].map(x=>`<option value="${x}">${x}</option>`).join('');
+  aEl.value=a;
+}
+
+async function gerarRelatorio(){
+  const mes=parseInt(document.getElementById('rel-mes').value);
+  const ano=parseInt(document.getElementById('rel-ano').value);
+  const prefix=`${ano}-${String(mes).padStart(2,'0')}`;
+  const meses=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const el=document.getElementById('rel-content');
+  el.innerHTML='<div class="empty"><div class="spinner" style="margin:0 auto"></div><p style="margin-top:10px">Carregando dados...</p></div>';
+  try{
+    const [snapProf,snapRef]=await Promise.all([
+      db.collection('registros_prof').where('data','>=',prefix+'-01').where('data','<=',prefix+'-31').get(),
+      db.collection('registros_ref').where('data','>=',prefix+'-01').where('data','<=',prefix+'-31').get()
+    ]);
+    const rProf={}, rRef={};
+    snapProf.docs.forEach(d=>{ const dd=d.data(); if(!rProf[dd.alunoId]) rProf[dd.alunoId]=[]; rProf[dd.alunoId].push(dd); });
+    snapRef.docs.forEach(d=>{ const dd=d.data(); if(!rRef[dd.alunoId]) rRef[dd.alunoId]=[]; rRef[dd.alunoId].push(dd); });
+    // Unir todos os alunos presentes
+    const alunosPresentes=new Set([...Object.keys(rProf),...Object.keys(rRef)]);
+    if(!alunosPresentes.size){ el.innerHTML='<div class="empty"><div class="empty-ico">📊</div><p>Nenhum registro neste mês.</p></div>'; return; }
+    let totalGeral=0;
+    let html=`<div style="text-align:center;font-size:.8rem;color:var(--g400);margin-bottom:10px">${meses[mes]} / ${ano}</div>`;
+    // Ordenar por nome
+    const alunosOrdenados=[...alunosPresentes].sort((a,b)=>{
+      const na=getAluno(a)?.nome||''; const nb=getAluno(b)?.nome||'';
+      return na.localeCompare(nb,'pt-BR');
+    });
+    alunosOrdenados.forEach(alunoId=>{
+      const al=getAluno(alunoId);
+      const nome=al?al.nome:'Aluno removido';
+      const turma=al?.turma||'';
+      const regsP=rProf[alunoId]||[];
+      const regsR=rRef[alunoId]||[];
+      let totalMin=0,tLM=0,tAlm=0,tLT=0,tJan=0;
+      // Por data
+      const datas=new Set([...regsP.map(r=>r.data),...regsR.map(r=>r.data)]);
+      datas.forEach(data=>{
+        const rp=regsP.find(r=>r.data===data);
+        const rr=regsR.find(r=>r.data===data);
+        if(rp) totalMin+=(rp.minutosExtra||0);
+        if(rr?.lancheManha) tLM++;
+        if(rr?.almoco) tAlm++;
+        if(rr?.lancheTarde) tLT++;
+        if(rr?.jantar) tJan++;
+      });
+      const horas=totalMin/60;
+      const totalVal=(horas*(CFG.hora||0))+(tLM*(CFG.lancheManha||0))+(tAlm*(CFG.almoco||0))+(tLT*(CFG.lancheTarde||0))+(tJan*(CFG.jantar||0));
+      totalGeral+=totalVal;
+      html+=`<div class="rel-aluno">
+        <div class="rel-nome">${nome}</div>
+        <div class="rel-sub">${turma}${al?.matricula?' · Mat. '+al.matricula:''}</div>
+        <div class="rel-grid">
+          <div class="rel-cell"><div class="rel-cell-lbl">⏰ Horas extras</div><div class="rel-cell-val">${fromMin(totalMin)}</div></div>
+          <div class="rel-cell"><div class="rel-cell-lbl">☕+🍪 Lanches</div><div class="rel-cell-val">${tLM+tLT}x</div></div>
+          <div class="rel-cell"><div class="rel-cell-lbl">🍽️+🌙 Alm/Jan</div><div class="rel-cell-val">${tAlm+tJan}x</div></div>
+        </div>
+        <div class="rel-total">
+          <span style="font-size:.82rem;font-weight:700">Total a cobrar</span>
+          <span style="font-size:1.2rem;font-weight:800">R$ ${totalVal.toFixed(2)}</span>
+        </div>
+      </div>`;
+    });
+    html+=`<div style="background:var(--g800);color:white;border-radius:var(--rad);padding:16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div><div style="font-size:.78rem;opacity:.7">TOTAL GERAL DO MÊS</div><div style="font-size:.8rem;opacity:.6">${alunosPresentes.size} aluno(s)</div></div>
+      <div style="font-size:1.5rem;font-weight:800">R$ ${totalGeral.toFixed(2)}</div>
+    </div>`;
+    el.innerHTML=html;
+  }catch(e){ el.innerHTML=`<div class="empty"><div class="empty-ico">❌</div><p>Erro ao carregar dados.</p></div>`; }
+}
+
+// ===== USUÁRIOS =====
+async function renderUsuarios(){
+  const el=document.getElementById('usuarios-list');
+  try{
+    const snap=await db.collection('usuarios').get();
+    const users=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!users.length){el.innerHTML='<div class="empty"><div class="empty-ico">👥</div><p>Nenhum usuário.</p></div>';return;}
+    const roleLabel={admin:'🔑 Admin',professora:'👩‍🏫 Professora',refeitorio:'🍽️ Refeitório'};
+    el.innerHTML=users.map(u=>`
+      <div class="user-item">
+        <div>
+          <div style="font-weight:700;font-size:.88rem">${u.nome}</div>
+          <div style="font-size:.75rem;color:var(--g400)">${u.email||''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge badge-b">${roleLabel[u.role]||u.role}</span>
+          ${u.id!==ME.uid?`<button onclick="removerUsuario('${u.id}')" style="background:none;border:none;color:var(--r);cursor:pointer;font-size:.9rem">✕</button>`:'<span style="font-size:.72rem;color:var(--g400)">você</span>'}
+        </div>
+      </div>`).join('');
+  }catch{ el.innerHTML='<div class="empty"><div class="empty-ico">❌</div><p>Erro ao carregar.</p></div>'; }
+}
+
+async function removerUsuario(uid){
+  if(!confirm('Remover este usuário? Ele perderá o acesso.'))return;
+  await db.collection('usuarios').doc(uid).delete();
+  toast('Usuário removido');
+  renderUsuarios();
+}
+
+async function gerarConvite(){
+  const nome=document.getElementById('nu-nome').value.trim();
+  const email=document.getElementById('nu-email').value.trim();
+  const role=document.getElementById('nu-role').value;
+  if(!nome||!email){toast('⚠️ Preencha nome e e-mail');return;}
+  // Gerar código de 8 letras
+  const codigo=Math.random().toString(36).substring(2,10).toUpperCase();
+  await db.collection('convites').doc(codigo).set({nome,email,role,usado:false,criadoEm:firebase.firestore.FieldValue.serverTimestamp()});
+  const el=document.getElementById('nu-resultado');
+  el.innerHTML=`<div style="background:#f0fdf4;border:1.5px solid var(--g);border-radius:10px;padding:14px;margin-top:4px">
+    <p style="font-size:.82rem;font-weight:700;color:var(--g);margin-bottom:6px">✅ Código gerado para ${nome}!</p>
+    <p style="font-size:.8rem;color:var(--g800);margin-bottom:4px">Envie para o usuário:</p>
+    <div style="background:white;border-radius:8px;padding:10px 14px;font-size:1rem;font-weight:800;letter-spacing:.1em;text-align:center;color:var(--p);border:1.5px solid var(--g200)">${codigo}</div>
+    <p style="font-size:.75rem;color:var(--g400);margin-top:6px">O usuário acessa o sistema → "Criar conta" → digita este código</p>
+    <p style="font-size:.75rem;color:var(--g400)">Link: <strong>${window.location.href}</strong></p>
+  </div>`;
+  document.getElementById('nu-nome').value='';
+  document.getElementById('nu-email').value='';
+}
+
+// ===== CONFIG =====
+function loadConfigUI(){
+  document.getElementById('cfg-hora').value=CFG.hora||'';
+  document.getElementById('cfg-lm').value=CFG.lancheManha||'';
+  document.getElementById('cfg-alm').value=CFG.almoco||'';
+  document.getElementById('cfg-lt').value=CFG.lancheTarde||'';
+  document.getElementById('cfg-jan').value=CFG.jantar||'';
+  document.getElementById('h-inf-m').value=HORARIOS.infM||'11:40';
+  document.getElementById('h-1-m').value=HORARIOS.ano1M||'12:10';
+  document.getElementById('h-2-5-m').value=HORARIOS.anos25M||'12:30';
+  document.getElementById('h-6-9-m').value=HORARIOS.anos69M||'13:20';
+  document.getElementById('h-tarde').value=HORARIOS.tarde||'13:10';
+  document.getElementById('cfg-escola').value=document.getElementById('h-escola').textContent;
+}
+
+async function salvarConfig(){
+  CFG={hora:parseFloat(document.getElementById('cfg-hora').value)||0,
+    lancheManha:parseFloat(document.getElementById('cfg-lm').value)||0,
+    almoco:parseFloat(document.getElementById('cfg-alm').value)||0,
+    lancheTarde:parseFloat(document.getElementById('cfg-lt').value)||0,
+    jantar:parseFloat(document.getElementById('cfg-jan').value)||0};
+  await db.collection('config').doc('precos').set(CFG);
+  toast('✅ Preços salvos!');
+}
+
+async function salvarHorarios(){
+  HORARIOS={
+    infM:document.getElementById('h-inf-m').value,
+    ano1M:document.getElementById('h-1-m').value,
+    anos25M:document.getElementById('h-2-5-m').value,
+    anos69M:document.getElementById('h-6-9-m').value,
+    tarde:document.getElementById('h-tarde').value
+  };
+  await db.collection('config').doc('horarios').set(HORARIOS);
+  toast('✅ Horários salvos!');
+}
+
+async function salvarEscola(){
+  const n=document.getElementById('cfg-escola').value.trim();
+  if(!n)return;
+  await db.collection('config').doc('escola').set({nome:n});
+  document.getElementById('h-escola').textContent=n;
+  toast('✅ Salvo!');
+}
+</script>
+</body>
+</html>
